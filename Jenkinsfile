@@ -1,12 +1,22 @@
 pipeline{
-    agent {
-        docker {
-        image 'abhishekf5/maven-abhishek-docker-agent:v1'
-        args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
+    // agent {
+    //     docker {
+    //     image 'abhishekf5/maven-abhishek-docker-agent:v1'
+    //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    // }
     
     stages {
+
+        stage('Debug Environment') {
+            steps {
+                echo 'Printing PATH variable'
+                sh 'echo $PATH'
+                echo 'Checking for docker command'
+                sh 'which docker'
+            }
+        }
         stage('Build') {
         steps {
             echo 'Building...'
