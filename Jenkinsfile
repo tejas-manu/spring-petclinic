@@ -1,16 +1,12 @@
 pipeline{
-    agent {
-        docker {
-            image 'maven:3.9.6-eclipse-temurin-17'
-        }
-    }
+    agent any
 
     stages {
         stage('Build') {
             steps {
                 echo 'Building...'
                 // Use the built-in WORKSPACE environment variable for a guaranteed absolute path
-                sh "./mvnw package -DskipTests -Dmaven.repo.local=${WORKSPACE}/.m2"
+                sh "./mvnw package"
             }
         }
 
@@ -21,8 +17,7 @@ pipeline{
                     // Apply the same absolute path fix for the SonarQube step
                     sh "mvn sonar:sonar \
                     -Dsonar.projectKey=spring-petclinic-tejas \
-                    -Dsonar.host.url=http://3.87.53.170:9000 \
-                    -Dmaven.repo.local=${WORKSPACE}/.m2"
+                    -Dsonar.host.url=http://3.87.53.170:9000"
                 }
             }
         }
