@@ -1,11 +1,10 @@
 pipeline{
     agent {
         docker {
-        image 'abhishekf5/maven-abhishek-docker-agent:v1'
-        args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+            image 'maven:3.9.6-eclipse-temurin-17'
         }
     }
-    
+
     stages {
 
         stage('Debug Environment') {
