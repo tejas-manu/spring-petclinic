@@ -14,7 +14,7 @@ pipeline {
             steps {
                 echo 'Building and running static code analysis...'
                 // The `mvnw package` command compiles the code, creating the target/classes directory.
-                sh "./mvnw package"
+                sh "mvn package"
 
                 withSonarQubeEnv('My SonarQube Server') {
                     // Since we are in the same stage, the compiled classes are now available for SonarQube.
