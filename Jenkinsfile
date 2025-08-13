@@ -6,15 +6,6 @@ pipeline{
     }
 
     stages {
-
-        stage('Debug Environment') {
-            steps {
-                echo 'Printing PATH variable'
-                sh 'echo $PATH'
-                echo 'Checking for docker command'
-                sh 'which docker'
-            }
-        }
         stage('Build') {
         steps {
             echo 'Building...'
