@@ -31,18 +31,13 @@ pipeline{
         }
 
         stage('Build Docker Images') {
-            agent {
-                docker {
-                    image 'docker/compose:latest'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
+            agent {label 'master'}
             
             steps {
                 script {
                     echo "----------------------------------------"
                     echo "Building Docker images using docker-compose..."
-                    sh 'docker-compose build'
+                    sh 'docker build -t ${APP_IMAGE_NAME}:latest'
                     
                     echo "----------------------------------------"
                     echo "Docker Build Complete. Images created:"
