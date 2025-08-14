@@ -1,5 +1,5 @@
 pipeline{
-    agent none
+    agent any
     // agent {
     //     docker {
     //         image 'maven:3.9.6-eclipse-temurin-17'
@@ -31,13 +31,6 @@ pipeline{
         }
 
         stage('Build Docker Images') {
-            agent {
-                docker {
-                    image 'docker:20.10.7'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
-            
             steps {
                 script {
                     echo "----------------------------------------"
