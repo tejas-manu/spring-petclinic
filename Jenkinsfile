@@ -24,7 +24,7 @@ pipeline{
                 withSonarQubeEnv('My SonarQube Server') {
                     sh "mvn sonar:sonar \
                     -Dsonar.projectKey=spring-petclinic-tejas \
-                    -Dsonar.host.url=http://3.87.53.170:9000"
+                    -Dsonar.host.url=http://54.144.178.91:9000"
                 }
             }
         }
