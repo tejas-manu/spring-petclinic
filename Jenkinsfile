@@ -6,6 +6,10 @@ pipeline{
         }
     }
 
+        environment {
+            APP_IMAGE_NAME = 'my-cool-app'
+    }
+
     stages {
         stage('Build') {
             steps {
@@ -24,6 +28,23 @@ pipeline{
                 }
             }
         }
+
+        stage('Build Docker Images') {
+            
+            steps {
+                script {
+                    echo "----------------------------------------"
+                    echo "Building Docker images using docker-compose..."
+                    sh 'docker-compose build'
+                    
+                    echo "----------------------------------------"
+                    echo "Docker Build Complete. Images created:"
+                    echo "Application Image: ${APP_IMAGE_NAME}:latest"
+                    echo "----------------------------------------"
+                }
+            }
+        }
+    
 
         stage('Test') {
             steps {
