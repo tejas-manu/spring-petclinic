@@ -42,7 +42,7 @@ pipeline{
                 script {
                     echo "----------------------------------------"
                     echo "Building Docker images using docker-compose..."
-                    sh 'docker build -t ${APP_IMAGE_NAME}:latest'
+                    sh 'docker build -t ${APP_IMAGE_NAME}:latest .'
                     
                     echo "----------------------------------------"
                     echo "Docker Build Complete. Images created:"
