@@ -14,10 +14,10 @@ pipeline {
     }
     stage('Build and Test') {
       steps {
-        sh 'mvn package -DskipTests'
+        sh 'mvn package'
       }
     }
-    
+
 
     stage('Static Code Analysis') {
         steps {
