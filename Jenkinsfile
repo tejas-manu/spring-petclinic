@@ -21,7 +21,7 @@ pipeline {
         }
       }
       steps {
-        sh './mvnw clean package'
+        sh 'mvn clean package'
       }
     }
 
