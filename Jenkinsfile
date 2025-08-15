@@ -64,6 +64,7 @@ pipeline {
                 '''
             }
         }
+        
         // steps {
         //     // Use the 'Secret text' credential type in Jenkins for a GitHub Personal Access Token (PAT)
         //     withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
