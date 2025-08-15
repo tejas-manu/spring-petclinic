@@ -16,8 +16,6 @@ pipeline {
         sh 'mvn package -DskipTests'
       }
     }
-
-
     stage('Static Code Analysis') {
         steps {
           echo 'Running SonarQube analysis...'
