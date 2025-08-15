@@ -6,7 +6,7 @@ pipeline {
   //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
   //   }
   // }
-  
+
   stages {
     stage('Checkout') {
       agent any
@@ -73,7 +73,7 @@ pipeline {
           }
         }
         environment {
-            GIT_REPO_NAME = "spring-petclinic"
+            GIT_REPO_NAME = "spring-petclinic-manifest"
             GIT_USER_NAME = "tejas-manu"
         }
         steps {
@@ -85,7 +85,7 @@ pipeline {
                     sed -i "s|tejas1205/petclinic:.*|tejas1205/petclinic:${BUILD_NUMBER}|g" k8s/petclinic.yml
                     git add k8s/petclinic.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:pipeline
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                 '''
             }
         }
