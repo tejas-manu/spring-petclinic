@@ -66,6 +66,12 @@ pipeline {
     }
 
     stage('Update Manifests') {
+            agent {
+              docker {
+                image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+                args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+              }
+            }
             steps {
                 script {
                     // Define manifest repo variables
@@ -98,12 +104,12 @@ pipeline {
         }
 
     // stage('Update Deployment File') {
-    //     agent {
-    //       docker {
-    //         image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-    //         args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-    //       }
-    //     }
+        // agent {
+        //   docker {
+        //     image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+        //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+        //   }
+        // }
     //     environment {
     //         GIT_REPO_NAME = "spring-petclinic-manifest"
     //         GIT_USER_NAME = "tejas-manu"
