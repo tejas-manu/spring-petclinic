@@ -1,5 +1,5 @@
 pipeline {
-  agent none // Use 'none' to define agents for each stage individually
+  agent none
   // agent {
   //   docker {
   //     image 'tejas1205/maven-docker-agent:jdk17-v1.0'
@@ -7,16 +7,22 @@ pipeline {
   //   }
   // }
   stages {
-    // stage('Checkout') {
-    //     steps {
-    //     sh 'echo passed'
-    //   }
-    // }
-    // stage('Build and Test') {
-    //   steps {
-    //     sh './mvnw clean package'
-    //   }
-    // }
+    stage('Checkout') {
+        steps {
+        sh 'echo passed'
+      }
+    }
+    stage('Build and Test') {
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      steps {
+        sh './mvnw clean package'
+      }
+    }
 
     stage('Static Code Analysis') {
         agent {
@@ -39,12 +45,11 @@ pipeline {
       agent {
         docker {
           image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-          args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+          args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
         }
       }
       environment {
         DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
-        // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
         REGISTRY_CREDENTIALS = credentials('docker-cred')
       }
       steps {
@@ -62,7 +67,7 @@ pipeline {
         agent {
           docker {
             image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
           }
         }
         environment {
@@ -85,68 +90,3 @@ pipeline {
     }
   }
 }
-
-
-
-
-// pipeline{
-//     agent any
-//     // agent {
-//     //     docker {
-//     //         image 'maven:3.9.6-eclipse-temurin-17'
-//     //         args '-v /var/run/docker.sock:/var/run/docker.sock'
-//     //     }
-//     // }
-
-//         environment {
-//             APP_IMAGE_NAME = 'my-cool-app'
-//     }
-
-//     stages {
-//         stage('Static Code Analysis') {
-            // agent {
-            //     docker {
-            //         image 'maven:3.9.6-eclipse-temurin-17'
-            //         args '-v /var/run/docker.sock:/var/run/docker.sock'
-            //         }
-            //     }
-
-//             steps {
-//                 echo 'Running SonarQube analysis...'
-//                 withSonarQubeEnv('MySonarServer') {
-//                     sh "mvn clean package sonar:sonar \
-//                     -Dsonar.projectKey=spring-petclinic-tejas \
-//                     -Dsonar.host.url=http://54.209.232.12:9000"
-//                 }
-//             }
-//         }
-
-//         // stage('Build Docker Images') {
-//         //     steps {
-//         //         script {
-//         //             echo "----------------------------------------"
-//         //             echo "Building Docker images using docker-compose..."
-//         //             sh 'docker build -t ${APP_IMAGE_NAME}:latest .'
-                    
-//         //             echo "----------------------------------------"
-//         //             echo "Docker Build Complete. Images created:"
-//         //             echo "Application Image: ${APP_IMAGE_NAME}:latest"
-//         //             echo "----------------------------------------"
-//         //         }
-//         //     }
-//         // }
-    
-
-//         stage('Test') {
-//             steps {
-//                 echo 'Testing...'
-//             }
-//         }
-//     }
-
-//     post {
-//         always {
-//             echo 'Cleaning up...'
-//         }
-//     }
-// }
