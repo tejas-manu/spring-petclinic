@@ -34,8 +34,14 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
-            - name: SERVICE_BINDING_ROOT
-              value: /bindings
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://demo-db:5432/petclinic"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "user"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "pass"
+            # - name: SERVICE_BINDING_ROOT
+            #   value: /bindings
             - name: SPRING_APPLICATION_JSON
               value: |
                 {
