@@ -21,7 +21,7 @@ pipeline {
     stage('Static Code Analysis') {
         steps {
           echo 'Running SonarQube analysis...'
-          withSonarQubeEnv('My SonarQube Server') {
+          withSonarQubeEnv('MySonarServer') {
             sh "mvn sonar:sonar \
                 -Dsonar.projectKey=spring-petclinic-tejas \
                 -Dsonar.host.url=http://54.144.178.91:9000"
