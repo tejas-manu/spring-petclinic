@@ -1,8 +1,9 @@
 pipeline {
   agent {
     docker {
-      image 'tejas1205/maven-docker-agent:jdk17-v2.0'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+      args '-v /var/run/docker.sock:/var/run/docker.sock'
+      // args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
   stages {
@@ -18,12 +19,12 @@ pipeline {
     // }
 
     stage('Static Code Analysis') {
-        agent {
-            docker {
-              image 'maven:3.9.6-eclipse-temurin-17'
-              args '-v /var/run/docker.sock:/var/run/docker.sock'
-            }
-        }
+        // agent {
+        //     docker {
+        //       image 'maven:3.9.6-eclipse-temurin-17'
+        //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+        //     }
+        // }
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
