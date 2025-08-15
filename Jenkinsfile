@@ -7,7 +7,7 @@ pipeline {
   //   }
   // }
 
-  tool {
+  tools {
     maven 'maven3'
     sonarQube 'MySonarServer'
   }
@@ -31,12 +31,12 @@ pipeline {
     }
 
     stage('Static Code Analysis') {
-        agent {
-            docker {
-              image 'maven:3.9.6-eclipse-temurin-17'
-              args '-v /var/run/docker.sock:/var/run/docker.sock'
-            }
-        }
+        // agent {
+        //     docker {
+        //       image 'maven:3.9.6-eclipse-temurin-17'
+        //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+        //     }
+        // }
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
@@ -47,67 +47,67 @@ pipeline {
         }
     }
 
-    stage('Build and Push Docker Image') {
-      agent {
-        docker {
-          image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-          args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
-      environment {
-        DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
-        REGISTRY_CREDENTIALS = credentials('docker-cred')
-      }
-      steps {
-        script {
-          sh 'docker build -t ${DOCKER_IMAGE} .'
-          def dockerImage = docker.image("${DOCKER_IMAGE}")
-          docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
-                dockerImage.push()
-          }
-        }
-      }
-    }
+    // stage('Build and Push Docker Image') {
+    //   agent {
+    //     docker {
+    //       image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+    //       args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
+    //   environment {
+    //     DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
+    //     REGISTRY_CREDENTIALS = credentials('docker-cred')
+    //   }
+    //   steps {
+    //     script {
+    //       sh 'docker build -t ${DOCKER_IMAGE} .'
+    //       def dockerImage = docker.image("${DOCKER_IMAGE}")
+    //       docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+    //             dockerImage.push()
+    //       }
+    //     }
+    //   }
+    // }
 
-    stage('Update Manifests') {
-            agent {
-              docker {
-                image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-                args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-              }
-            }
-            environment {
-              GIT_REPO_NAME = "spring-petclinic-manifest"
-              GIT_USER_NAME = "tejas-manu"
-            }
-            steps {
-                script {
-                    def manifestRepoUrl = 'https://github.com/tejas-manu/spring-petclinic-manifest.git'
-                    def manifestRepoDir = 'manifests'
+//     stage('Update Manifests') {
+//             agent {
+//               docker {
+//                 image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+//                 args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+//               }
+//             }
+//             environment {
+//               GIT_REPO_NAME = "spring-petclinic-manifest"
+//               GIT_USER_NAME = "tejas-manu"
+//             }
+//             steps {
+//                 script {
+//                     def manifestRepoUrl = 'https://github.com/tejas-manu/spring-petclinic-manifest.git'
+//                     def manifestRepoDir = 'manifests'
 
 
-                    dir(manifestRepoDir) {
-                        git branch: 'main', credentialsId: 'github', url: manifestRepoUrl
+//                     dir(manifestRepoDir) {
+//                         git branch: 'main', credentialsId: 'github', url: manifestRepoUrl
 
-                        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                            sh '''
-                                git config user.email "tejasmanus.12@gmail.com"
-                                git config user.name "tejas-manu"
+//                         withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+//                             sh '''
+//                                 git config user.email "tejasmanus.12@gmail.com"
+//                                 git config user.name "tejas-manu"
 
-                                # Modify the YAML file in this new directory
-                                sed -i "s|tejas1205/petclinic:.*|tejas1205/petclinic:${BUILD_NUMBER}|g" k8s/petclinic.yml
+//                                 # Modify the YAML file in this new directory
+//                                 sed -i "s|tejas1205/petclinic:.*|tejas1205/petclinic:${BUILD_NUMBER}|g" k8s/petclinic.yml
                                 
-                                git add k8s/petclinic.yml
-                                git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/spring-petclinic-manifest HEAD:main
-                            '''
-                        }
-                    }
-                }
-            }
-        }
+//                                 git add k8s/petclinic.yml
+//                                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+//                                 git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/spring-petclinic-manifest HEAD:main
+//                             '''
+//                         }
+//                     }
+//                 }
+//             }
+//         }
 
 
 
-  }
-}
+//   }
+// }
