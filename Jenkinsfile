@@ -95,7 +95,7 @@ pipeline {
                                 
                                 git add k8s/petclinic.yml
                                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/petclinic-manifests HEAD:main
+                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/spring-petclinic-manifest HEAD:main
                             '''
                         }
                     }
