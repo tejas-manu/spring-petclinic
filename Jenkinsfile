@@ -8,8 +8,9 @@ pipeline {
   // }
   stages {
     stage('Checkout') {
-        steps {
-        sh 'echo passed'
+      agent any
+      steps {
+        checkout scm
       }
     }
     stage('Build and Test') {
