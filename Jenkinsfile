@@ -72,6 +72,10 @@ pipeline {
                 args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
               }
             }
+            environment {
+              GIT_REPO_NAME = "spring-petclinic-manifest"
+              GIT_USER_NAME = "tejas-manu"
+            }
             steps {
                 script {
                     // Define manifest repo variables
@@ -110,10 +114,10 @@ pipeline {
         //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
         //   }
         // }
-    //     environment {
-    //         GIT_REPO_NAME = "spring-petclinic-manifest"
-    //         GIT_USER_NAME = "tejas-manu"
-    //     }
+        // environment {
+        //     GIT_REPO_NAME = "spring-petclinic-manifest"
+        //     GIT_USER_NAME = "tejas-manu"
+        // }
     //     steps {
     //         withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
     //             sh '''
