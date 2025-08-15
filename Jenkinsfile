@@ -35,7 +35,7 @@ pipeline {
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
-            sh "mvn clean package sonar:sonar \
+            sh "mvn onar:sonar \
                 -Dsonar.projectKey=spring-petclinic-tejas \
                 -Dsonar.host.url=http://54.209.232.12:9000/"
             }
