@@ -101,20 +101,20 @@ pipeline{
             }
         }
 
-        stage('Build Docker Images') {
-            steps {
-                script {
-                    echo "----------------------------------------"
-                    echo "Building Docker images using docker-compose..."
-                    sh 'docker build -t ${APP_IMAGE_NAME}:latest .'
+        // stage('Build Docker Images') {
+        //     steps {
+        //         script {
+        //             echo "----------------------------------------"
+        //             echo "Building Docker images using docker-compose..."
+        //             sh 'docker build -t ${APP_IMAGE_NAME}:latest .'
                     
-                    echo "----------------------------------------"
-                    echo "Docker Build Complete. Images created:"
-                    echo "Application Image: ${APP_IMAGE_NAME}:latest"
-                    echo "----------------------------------------"
-                }
-            }
-        }
+        //             echo "----------------------------------------"
+        //             echo "Docker Build Complete. Images created:"
+        //             echo "Application Image: ${APP_IMAGE_NAME}:latest"
+        //             echo "----------------------------------------"
+        //         }
+        //     }
+        // }
     
 
         stage('Test') {
