@@ -31,6 +31,7 @@ spec:
       containers:
         - name: workload
           image: tejas1205/petclinic:1
+          image: tejas1205/petclinic:10
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
