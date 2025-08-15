@@ -60,7 +60,7 @@ pipeline {
                     sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" k8s/petclinic.yml
                     git add k8s/petclinic.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:pipeline
                 '''
             }
         }
