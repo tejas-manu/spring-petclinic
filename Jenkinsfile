@@ -7,10 +7,11 @@ pipeline {
   }
   stages {
     stage('Checkout') {
+      steps{
         sh 'echo passed'
-        
+      }        
       }
-    }
+    
     stage('Build and Test') {
       steps {
         sh 'mvn package -DskipTests'
@@ -66,6 +67,7 @@ pipeline {
         }
     }
   }
+}
 
 
 
