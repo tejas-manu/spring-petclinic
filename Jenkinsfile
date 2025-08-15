@@ -11,17 +11,23 @@ pipeline {
         sh 'echo passed'
       }
     }
-    stage('Build and Test') {
-      steps {
-        sh './mvnw clean package'
-      }
-    }
+    // stage('Build and Test') {
+    //   steps {
+    //     sh './mvnw clean package'
+    //   }
+    // }
 
     stage('Static Code Analysis') {
+        agent {
+            docker {
+              image 'maven:3.9.6-eclipse-temurin-17'
+              args '-v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
-            sh "mvn sonar:sonar \
+            sh "mvn clean package sonar:sonar \
                 -Dsonar.projectKey=spring-petclinic-tejas \
                 -Dsonar.host.url=http://54.209.232.12:9000/"
             }
@@ -84,12 +90,12 @@ pipeline {
 
 //     stages {
 //         stage('Static Code Analysis') {
-//             agent {
-//                 docker {
-//                     image 'maven:3.9.6-eclipse-temurin-17'
-//                     args '-v /var/run/docker.sock:/var/run/docker.sock'
-//                     }
-//                 }
+            // agent {
+            //     docker {
+            //         image 'maven:3.9.6-eclipse-temurin-17'
+            //         args '-v /var/run/docker.sock:/var/run/docker.sock'
+            //         }
+            //     }
 
 //             steps {
 //                 echo 'Running SonarQube analysis...'
