@@ -11,17 +11,17 @@ pipeline {
         sh 'echo passed'
       }
     }
-    // stage('Build and Test') {
-    //   steps {
-    //     sh './mvnw clean package'
-    //   }
-    // }
+    stage('Build and Test') {
+      steps {
+        sh './mvnw clean package'
+      }
+    }
 
     stage('Static Code Analysis') {
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
-            sh "mvn clean package sonar:sonar \
+            sh "mvn sonar:sonar \
                 -Dsonar.projectKey=spring-petclinic-tejas \
                 -Dsonar.host.url=http://54.209.232.12:9000/"
             }
