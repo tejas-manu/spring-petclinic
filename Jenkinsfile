@@ -2,8 +2,8 @@ pipeline {
   agent {
     docker {
       image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-      // args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      // args '-v /var/run/docker.sock:/var/run/docker.sock'
+      args '--user jenkins -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
   stages {
