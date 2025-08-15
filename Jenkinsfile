@@ -64,38 +64,6 @@ pipeline {
                 '''
             }
         }
-
-        // steps {
-        //     // Use the 'Secret text' credential type in Jenkins for a GitHub Personal Access Token (PAT)
-        //     withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-        //         sh '''
-        //             echo "--- Configuring Git User ---"
-        //             git config user.email "jenkins-ci@your-organization.com"
-        //             git config user.name "Jenkins CI"
-
-        //             echo "--- Preparing Git Repository ---"
-        //             git remote set-url origin https://${GITHUB_TOKEN}@github.com/tejas-manu/spring-petclinic.git
-
-        //             echo "--- Checking out and synchronizing the main branch ---"
-        //             git checkout main
-        //             git pull origin main
-
-        //             echo "--- Updating Kubernetes manifest with build number: ${BUILD_NUMBER} ---"
-        //             sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" k8s/petclinic.yml
-                    
-
-        //             if [ -n "$(git status --porcelain)" ]; then
-        //                 echo "--- Committing and Pushing Changes ---"
-        //                 git add k8s/petclinic.yml
-        //                 git commit -m "CI: Update deployment image to version ${BUILD_NUMBER}"
-                        
-        //                 git push origin main
-        //             else
-        //                 echo "--- No changes to commit. Skipping push. ---"
-        //             fi
-        //         '''
-        //     }
-        // }
     }
   }
 
