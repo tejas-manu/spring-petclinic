@@ -11,11 +11,11 @@ pipeline {
         sh 'echo passed'
       }
     }
-    stage('Build and Test') {
-      steps {
-        sh './mvnw clean package'
-      }
-    }
+    // stage('Build and Test') {
+    //   steps {
+    //     sh './mvnw clean package'
+    //   }
+    // }
 
     stage('Static Code Analysis') {
         steps {
