@@ -7,7 +7,7 @@ spec:
   type: NodePort
   ports:
     - port: 80
-      targetPort: 8080
+      targetPort: 8090
   selector:
     app: petclinic
 
@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: workload
-          image: dsyer/petclinic
+          image: tejas1205/petclinic:replaceImageTag
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
@@ -43,7 +43,7 @@ spec:
                 }
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8090
           livenessProbe:
             httpGet:
               path: /livez

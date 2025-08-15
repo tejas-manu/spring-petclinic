@@ -29,4 +29,6 @@ EXPOSE 8090
 # Set the entrypoint to run the application
 # This command starts the application with the 'postgres' profile active
 # on port 8090, just like your original command.
-ENTRYPOINT ["java", "-Dspring.profiles.active=postgres", "-jar", "app.jar", "--server.port=8090"]
+# ENTRYPOINT ["java", "-Dspring.profiles.active=postgres", "-jar", "app.jar", "--server.port=8090"]
+
+ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=8090"]
