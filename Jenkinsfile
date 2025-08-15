@@ -9,7 +9,6 @@ pipeline {
 
   tools {
     maven 'maven3'
-    sonarQube 'MySonarServer'
   }
 
   stages {
