@@ -7,8 +7,8 @@ pipeline {
   }
   stages {
     stage('Checkout') {
-      steps {
         sh 'echo passed'
+        
       }
     }
     stage('Build and Test') {
@@ -24,7 +24,7 @@ pipeline {
           withSonarQubeEnv('MySonarServer') {
             sh "mvn sonar:sonar \
                 -Dsonar.projectKey=spring-petclinic-tejas \
-                -Dsonar.host.url=http://13.222.194.203:9000/"
+                -Dsonar.host.url=http://54.209.232.12:9000/"
             }
         }
     }
@@ -66,7 +66,6 @@ pipeline {
         }
     }
   }
-}
 
 
 // pipeline{
