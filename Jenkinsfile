@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent any
   // agent {
   //   docker {
   //     image 'tejas1205/maven-docker-agent:jdk17-v1.0'
@@ -7,6 +7,11 @@ pipeline {
   //   }
   // }
 
+  tools {
+    maven 'Maven 3.9.6'
+    jdk 'JDK 17'
+  }
+  
   stages {
     stage('Checkout') {
       agent any
