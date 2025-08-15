@@ -7,6 +7,7 @@ pipeline {
   }
   stages {
     stage('Checkout') {
+        steps {
         sh 'echo passed'
         
       }
