@@ -7,25 +7,24 @@ pipeline {
   //   }
   // }
 
-  tools {
-    maven 'Maven 3.9.6'
-    jdk 'JDK 17'
+  tool {
+    maven 'maven3'
+    sonarQube 'MySonarServer'
   }
-  
+
   stages {
     stage('Checkout') {
-      agent any
       steps {
         checkout scm
       }
     }
     stage('Build and Test') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
+      // agent {
+      //   docker {
+      //     image 'maven:3.9.6-eclipse-temurin-17'
+      //     args '-v /var/run/docker.sock:/var/run/docker.sock'
+      //   }
+      // }
       steps {
         sh 'mvn clean package'
       }
@@ -107,5 +106,8 @@ pipeline {
                 }
             }
         }
+
+
+
   }
 }
