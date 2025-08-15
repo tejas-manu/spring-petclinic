@@ -17,6 +17,7 @@ pipeline {
         sh 'mvn package -DskipTests'
       }
     }
+    
 
     stage('Static Code Analysis') {
         steps {
