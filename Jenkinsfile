@@ -1,30 +1,30 @@
 pipeline {
-  agent {
-    docker {
-      image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-      // args '-v /var/run/docker.sock:/var/run/docker.sock'
-      args '--user docker -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
-    }
-  }
+  agent none // Use 'none' to define agents for each stage individually
+  // agent {
+  //   docker {
+  //     image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+  //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+  //   }
+  // }
   stages {
-    stage('Checkout') {
-        steps {
-        sh 'echo passed'
-      }
-    }
-    stage('Build and Test') {
-      steps {
-        sh './mvnw clean package'
-      }
-    }
+    // stage('Checkout') {
+    //     steps {
+    //     sh 'echo passed'
+    //   }
+    // }
+    // stage('Build and Test') {
+    //   steps {
+    //     sh './mvnw clean package'
+    //   }
+    // }
 
     stage('Static Code Analysis') {
-        // agent {
-        //     docker {
-        //       image 'maven:3.9.6-eclipse-temurin-17'
-        //       args '-v /var/run/docker.sock:/var/run/docker.sock'
-        //     }
-        // }
+        agent {
+            docker {
+              image 'maven:3.9.6-eclipse-temurin-17'
+              args '-v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
         steps {
           echo 'Running SonarQube analysis...'
           withSonarQubeEnv('MySonarServer') {
@@ -36,6 +36,12 @@ pipeline {
     }
 
     stage('Build and Push Docker Image') {
+      agent {
+        docker {
+          image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+          args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+        }
+      }
       environment {
         DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
         // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
@@ -51,7 +57,14 @@ pipeline {
         }
       }
     }
+
     stage('Update Deployment File') {
+        agent {
+          docker {
+            image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+          }
+        }
         environment {
             GIT_REPO_NAME = "spring-petclinic"
             GIT_USER_NAME = "tejas-manu"
