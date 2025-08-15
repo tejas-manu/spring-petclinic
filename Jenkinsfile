@@ -7,18 +7,15 @@ pipeline {
   }
   stages {
     stage('Checkout') {
-      steps{
+        steps {
         sh 'echo passed'
-      }        
       }
-    
+    }
     stage('Build and Test') {
       steps {
         sh 'mvn package -DskipTests'
-
       }
     }
-
     stage('Static Code Analysis') {
         steps {
           echo 'Running SonarQube analysis...'
@@ -58,7 +55,8 @@ pipeline {
                     git config user.email "tejasmanus.12@gmail.com"
                     git config user.name "tejas-manu"
                     BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" k8s/petclinic.yml
+                    git pull https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    sed -i "s|tejas1205/petclinic:.*|tejas1205/petclinic:${BUILD_NUMBER}|g" k8s/petclinic.yml
                     git add k8s/petclinic.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
@@ -68,8 +66,6 @@ pipeline {
     }
   }
 }
-
-
 
 
 // pipeline{
