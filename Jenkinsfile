@@ -155,7 +155,8 @@ pipeline {
         def groupId = sh(returnStdout: true, script: 'id -g').trim()
 
         // Run ZAP as the Jenkins user
-        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw --user ${userId}:${groupId} zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -w /zap/wrk/ --user ${userId}:${groupId} zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+
         
         // Run ZAP baseline scan using the official Docker image
         // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
