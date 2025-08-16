@@ -109,69 +109,146 @@ pipeline {
     // }
   
 
-  stage('ZAP Scan') {
-    steps {
-      script {
-        echo "Waiting for ArgoCD to sync and application to be deployed..."
+//   stage('ZAP Scan') {
+//     steps {
+//       script {
+//         echo "Waiting for ArgoCD to sync and application to be deployed..."
 
-        // The URL that will be used for the health check.
-        // Make sure your application has a health endpoint, e.g., /actuator/health for Spring Boot
-        def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
+//         // The URL that will be used for the health check.
+//         // Make sure your application has a health endpoint, e.g., /actuator/health for Spring Boot
+//         def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
         
-        echo "Health check URL: ${minikubeServiceUrl}"
+//         echo "Health check URL: ${minikubeServiceUrl}"
 
-        // Wait for a maximum of 5 minutes (300 seconds)
-        sh """
-          URL="${minikubeServiceUrl}"
-          max_attempts=60
-          attempt=0
-          while [ \$attempt -lt \$max_attempts ]; do
-            echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
+//         // Wait for a maximum of 5 minutes (300 seconds)
+//         sh """
+//           URL="${minikubeServiceUrl}"
+//           max_attempts=60
+//           attempt=0
+//           while [ \$attempt -lt \$max_attempts ]; do
+//             echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
             
-            # Use curl to get the HTTP status code. The -L flag handles redirects.
-            # -s (silent), -o /dev/null (output to nowhere), -w "%{http_code}" (write status code)
-            http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
+//             # Use curl to get the HTTP status code. The -L flag handles redirects.
+//             # -s (silent), -o /dev/null (output to nowhere), -w "%{http_code}" (write status code)
+//             http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
             
-            if [ "\$http_code" -eq 200 ]; then
-              echo "Service is up and running! Proceeding with ZAP scan."
-              break
-            else
-              echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
-              sleep 5
-              attempt=\$((attempt + 1))
-            fi
-          done
+//             if [ "\$http_code" -eq 200 ]; then
+//               echo "Service is up and running! Proceeding with ZAP scan."
+//               break
+//             else
+//               echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
+//               sleep 5
+//               attempt=\$((attempt + 1))
+//             fi
+//           done
           
-          if [ \$http_code -ne 200 ]; then
-            echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
-            exit 1 // Fail the pipeline
-          fi
-        """
+//           if [ \$http_code -ne 200 ]; then
+//             echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
+//             exit 1 // Fail the pipeline
+//           fi
+//         """
 
-        def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
-        echo "ZAP scanning URL: ${zapUrl}"
+//         def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
+//         echo "ZAP scanning URL: ${zapUrl}"
 
-        // def userId = sh(returnStdout: true, script: 'id -u').trim()
-        // def groupId = sh(returnStdout: true, script: 'id -g').trim()
+//         // def userId = sh(returnStdout: true, script: 'id -u').trim()
+//         // def groupId = sh(returnStdout: true, script: 'id -g').trim()
 
-        sh "docker run -t zaproxy/zap-stable zap-baseline.py -t ${zapUrl}"
+//         sh "docker run -t zaproxy/zap-stable zap-baseline.py -t ${zapUrl}"
 
         
-        // Run ZAP baseline scan using the official Docker image
-        // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+//         // Run ZAP baseline scan using the official Docker image
+//         // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
 
-        // Archive the ZAP report for later inspection
-        // archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-      }
+//         // Archive the ZAP report for later inspection
+//         // archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+//       }
+//     }
+//   }
+// }
+
+stage('Build Custom ZAP Agent Image') {
+        steps {
+            script {
+                // Dynamically get the UID and GID of the current Jenkins agent
+                def jenkinsUid = sh(returnStdout: true, script: 'id -u jenkins').trim()
+                def jenkinsGid = sh(returnStdout: true, script: 'id -g jenkins').trim()
+                
+                // Define the tag for your new image, using the build number
+                def customImageTag = "jenkins-with-zap:${BUILD_NUMBER}"
+
+                echo "Building custom agent image with UID: ${jenkinsUid}, GID: ${jenkinsGid}"
+                
+                // Build the image, passing the dynamic UID/GID
+                sh """
+                    docker build \\
+                    --build-arg JENKINS_UID=${jenkinsUid} \\
+                    --build-arg JENKINS_GID=${jenkinsGid} \\
+                    -t ${customImageTag} \\
+                    -f jenkins-agent/Dockerfile .
+                """
+            }
+        }
     }
-  }
-}
+
+    stage('ZAP Scan') {
+        agent {
+            docker {
+                // Use the image you just built and pushed
+                image "jenkins-with-zap:${BUILD_NUMBER}"
+                args '-v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
+            steps {
+                script {
+                    echo "Waiting for ArgoCD to sync and application to be deployed..."
+                    def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
+                    echo "Health check URL: ${minikubeServiceUrl}"
+
+                    sh """
+                        URL="${minikubeServiceUrl}"
+                        max_attempts=60
+                        attempt=0
+                        while [ \$attempt -lt \$max_attempts ]; do
+                            echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
+                            http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
+                            if [ "\$http_code" -eq 200 ]; then
+                                echo "Service is up and running! Proceeding with ZAP scan."
+                                break
+                            else
+                                echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
+                                sleep 5
+                                attempt=\$((attempt + 1))
+                            fi
+                        done
+                        if [ "\$http_code" -ne 200 ]; then
+                            echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
+                            exit 1
+                        fi
+                    """
+
+                    // Clean up old report files before starting the new scan
+                    sh "rm -f zap_report.html"
+
+                    def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
+                    echo "ZAP scanning URL: ${zapUrl}"
+
+                    // Run the ZAP scan
+                    sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+
+                    // Archive the ZAP report for later inspection
+                    archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+                }
+            }
+        }
+    }
 
 
   post {
       always {
         echo 'Cleaning up...'
         sh 'docker rmi ${DOCKER_IMAGE} || true'
+        sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
 
         cleanWs()
 
