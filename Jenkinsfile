@@ -151,11 +151,11 @@ pipeline {
         def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
         echo "ZAP scanning URL: ${zapUrl}"
 
-        def userId = sh(returnStdout: true, script: 'id -u').trim()
-        def groupId = sh(returnStdout: true, script: 'id -g').trim()
+        // def userId = sh(returnStdout: true, script: 'id -u').trim()
+        // def groupId = sh(returnStdout: true, script: 'id -g').trim()
 
         // Run ZAP as the Jenkins user
-        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -w /zap/wrk/ --user ${userId}:${groupId} zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
 
         
         // Run ZAP baseline scan using the official Docker image
