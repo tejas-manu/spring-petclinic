@@ -26,13 +26,13 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
-    build: .
-    ports:
-      - "8090:8090"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/petclinic
-      - SPRING_PROFILES_ACTIVE=postgres
+  # app:
+  #   build: .
+  #   ports:
+  #     - "8090:8090"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/petclinic
+  #     - SPRING_PROFILES_ACTIVE=postgres
