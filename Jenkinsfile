@@ -108,4 +108,16 @@ pipeline {
       }
     }
   }
+
+
+  post {
+      always {
+        echo 'Cleaning up...'
+        sh 'docker rmi ${DOCKER_IMAGE} || true'
+
+        cleanWs()
+
+        echo 'Cleanup finished.'
+    }
+  }
 }
