@@ -125,18 +125,18 @@ pipeline {
           URL="${minikubeServiceUrl}"
           max_attempts=60
           attempt=0
-          while [ $attempt -lt $max_attempts ]; do
-            echo "Attempt $((attempt + 1)) of $max_attempts: Checking service availability at \$URL..."
+          while [ \$attempt -lt \$max_attempts ]; do
+            echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
             
             # Use curl to get the HTTP status code. The -L flag handles redirects.
             # -s (silent), -o /dev/null (output to nowhere), -w "%{http_code}" (write status code)
-            http_code=$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
+            http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
             
-            if [ "$http_code" -eq 200 ]; then
+            if [ "\$http_code" -eq 200 ]; then
               echo "Service is up and running! Proceeding with ZAP scan."
               break
             else
-              echo "Service not yet ready. Status code: $http_code. Waiting 5 seconds..."
+              echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
               sleep 5
               attempt=\$((attempt + 1))
             fi
