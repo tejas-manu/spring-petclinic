@@ -48,27 +48,27 @@ pipeline {
   }
 }
 
-    // stage('Build and Push Docker Image') {
-    //   agent {
-    //     docker {
-    //       image 'tejas1205/maven-docker-agent:jdk17-v1.0'
-    //       args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-    //     }
-    //   }
-    //   environment {
-    //     DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
-    //     REGISTRY_CREDENTIALS = credentials('docker-cred')
-    //   }
-    //   steps {
-    //     script {
-    //       sh 'docker build -t ${DOCKER_IMAGE} .'
-    //       def dockerImage = docker.image("${DOCKER_IMAGE}")
-    //       docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
-    //             dockerImage.push()
-    //       }
-    //     }
-    //   }
-    // }
+    stage('Build and Push Docker Image') {
+      // agent {
+      //   docker {
+      //     image 'tejas1205/maven-docker-agent:jdk17-v1.0'
+      //     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+      //   }
+      // }
+      environment {
+        DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
+        REGISTRY_CREDENTIALS = credentials('docker-cred')
+      }
+      steps {
+        script {
+          sh 'docker build -t ${DOCKER_IMAGE} .'
+          def dockerImage = docker.image("${DOCKER_IMAGE}")
+          docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+                dockerImage.push()
+          }
+        }
+      }
+    }
 
 //     stage('Update Manifests') {
 //             agent {
