@@ -154,17 +154,14 @@ pipeline {
         // def userId = sh(returnStdout: true, script: 'id -u').trim()
         // def groupId = sh(returnStdout: true, script: 'id -g').trim()
 
-        // Run ZAP as the Jenkins user
-        sh 'sudo chmod -R 777 .'
-
-        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+        sh "docker run -t zaproxy/zap-stable zap-baseline.py -t ${zapUrl}"
 
         
         // Run ZAP baseline scan using the official Docker image
         // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
 
         // Archive the ZAP report for later inspection
-        archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+        // archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
       }
     }
   }
