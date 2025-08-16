@@ -5,6 +5,10 @@ pipeline {
     maven 'maven3'
   }
 
+  environment {
+    DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
+  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -41,14 +45,28 @@ pipeline {
         }
     }
 
-    stage('Build and Push Docker Image') {
-      environment {
-        DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
-        REGISTRY_CREDENTIALS = credentials('docker-cred')
-      }
+    stage('Build Docker Image') {
       steps {
         script {
           sh 'docker build -t ${DOCKER_IMAGE} .'
+          echo "Docker image built: ${DOCKER_IMAGE}"
+        }
+      }
+    }
+
+    stage('Trivia Scan') {
+      steps {
+        script {
+          // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL tejas1205/petclinic:${BUILD_NUMBER}'
+          sh 'trivy image --severity HIGH,CRITICAL tejas1205/petclinic:${BUILD_NUMBER}'
+        }
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        script {
+          echo "Pushing Docker image: ${DOCKER_IMAGE}"
           def dockerImage = docker.image("${DOCKER_IMAGE}")
           docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
                 dockerImage.push()
@@ -56,6 +74,8 @@ pipeline {
         }
       }
     }
+
+
 
     stage('Update Manifests') {
       environment {
