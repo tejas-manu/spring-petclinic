@@ -17,36 +17,34 @@ pipeline {
         checkout scm
       }
     }
-    stage('Build and Test') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
-      steps {
-        sh 'mvn clean package'
-      }
-    }
+    // stage('Build and Test') {
+    //   agent {
+    //     docker {
+    //       image 'maven:3.9.6-eclipse-temurin-17'
+    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
+    //   steps {
+    //     sh 'mvn clean package'
+    //   }
+    // }
 
-    stage('Static Code Analysis') {
-        agent {
-            docker {
-              image 'maven:3.9.6-eclipse-temurin-17'
-              args '-v /var/run/docker.sock:/var/run/docker.sock'
-            }
-        }
-        steps {
-          echo 'Running SonarQube analysis...'
-          withSonarQubeEnv('MySonarServer') {
-            sh "mvn sonar:sonar \
-                -Dsonar.projectKey=spring-petclinic-tejas \
-                -Dsonar.host.url=http://54.209.232.12:9000/"
-            }
-        }
-    }
-  }
-}
+    // stage('Static Code Analysis') {
+    //     agent {
+    //         docker {
+    //           image 'maven:3.9.6-eclipse-temurin-17'
+    //           args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //         }
+    //     }
+    //     steps {
+    //       echo 'Running SonarQube analysis...'
+    //       withSonarQubeEnv('MySonarServer') {
+    //         sh "mvn sonar:sonar \
+    //             -Dsonar.projectKey=spring-petclinic-tejas \
+    //             -Dsonar.host.url=http://54.209.232.12:9000/"
+    //         }
+    //     }
+    // }
 
     stage('Build and Push Docker Image') {
       // agent {
@@ -69,6 +67,9 @@ pipeline {
         }
       }
     }
+  }
+}
+
 
 //     stage('Update Manifests') {
 //             agent {
