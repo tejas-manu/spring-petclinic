@@ -107,53 +107,54 @@ pipeline {
         }
       }
     }
-  }
+  
 
   stage('ZAP Scan') {
-  steps {
-    script {
-      echo "Waiting for ArgoCD to sync and application to be deployed..."
+    steps {
+      script {
+        echo "Waiting for ArgoCD to sync and application to be deployed..."
 
-      // The URL that will be used for the health check.
-      // Make sure your application has a health endpoint, e.g., /actuator/health for Spring Boot
-      def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
-      
-      echo "Health check URL: ${minikubeServiceUrl}"
-
-      // Wait for a maximum of 5 minutes (300 seconds)
-      sh '''
-        max_attempts=60
-        attempt=0
-        while [ $attempt -lt $max_attempts ]; do
-          echo "Attempt $((attempt + 1)) of $max_attempts: Checking service availability at ${minikubeServiceUrl}..."
-          
-          # Use curl to get the HTTP status code. The -L flag handles redirects.
-          # -s (silent), -o /dev/null (output to nowhere), -w "%{http_code}" (write status code)
-          http_code=$(curl -s -o /dev/null -L -w "%{http_code}" ${minikubeServiceUrl})
-          
-          if [ "$http_code" -eq 200 ]; then
-            echo "Service is up and running! Proceeding with ZAP scan."
-            break
-          else
-            echo "Service not yet ready. Status code: $http_code. Waiting 5 seconds..."
-            sleep 5
-            attempt=$((attempt + 1))
-          fi
-        done
+        // The URL that will be used for the health check.
+        // Make sure your application has a health endpoint, e.g., /actuator/health for Spring Boot
+        def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
         
-        if [ $http_code -ne 200 ]; then
-          echo "Error: Service failed to become ready after $((max_attempts * 5)) seconds."
-          exit 1 // Fail the pipeline
-        fi
-      '''
+        echo "Health check URL: ${minikubeServiceUrl}"
 
-      echo "ZAP scanning URL: ${minikubeServiceUrl}"
-      
-      // Run ZAP baseline scan using the official Docker image
-      sh "docker run --rm -v \$(pwd):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t ${minikubeServiceUrl} -I -r zap_report.html"
+        // Wait for a maximum of 5 minutes (300 seconds)
+        sh '''
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            echo "Attempt $((attempt + 1)) of $max_attempts: Checking service availability at ${minikubeServiceUrl}..."
+            
+            # Use curl to get the HTTP status code. The -L flag handles redirects.
+            # -s (silent), -o /dev/null (output to nowhere), -w "%{http_code}" (write status code)
+            http_code=$(curl -s -o /dev/null -L -w "%{http_code}" ${minikubeServiceUrl})
+            
+            if [ "$http_code" -eq 200 ]; then
+              echo "Service is up and running! Proceeding with ZAP scan."
+              break
+            else
+              echo "Service not yet ready. Status code: $http_code. Waiting 5 seconds..."
+              sleep 5
+              attempt=$((attempt + 1))
+            fi
+          done
+          
+          if [ $http_code -ne 200 ]; then
+            echo "Error: Service failed to become ready after $((max_attempts * 5)) seconds."
+            exit 1 // Fail the pipeline
+          fi
+        '''
 
-      // Archive the ZAP report for later inspection
-      archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+        echo "ZAP scanning URL: ${minikubeServiceUrl}"
+        
+        // Run ZAP baseline scan using the official Docker image
+        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t ${minikubeServiceUrl} -I -r zap_report.html"
+
+        // Archive the ZAP report for later inspection
+        archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+      }
     }
   }
 }
