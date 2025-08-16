@@ -1,5 +1,5 @@
 # Use a base image that already has some Jenkins tools
-FROM jenkins/jnlp-slave:latest
+FROM jenkins/inbound-agent:latest-jdk17
 
 # Use arguments to define the UID and GID (replace with your values from Step 1)
 ARG JENKINS_UID=111
