@@ -138,7 +138,7 @@ pipeline {
             else
               echo "Service not yet ready. Status code: $http_code. Waiting 5 seconds..."
               sleep 5
-              attempt=$((attempt + 1))
+              attempt=\$((attempt + 1))
             fi
           done
           
