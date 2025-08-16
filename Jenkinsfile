@@ -121,7 +121,7 @@ pipeline {
         echo "Health check URL: ${minikubeServiceUrl}"
 
         // Wait for a maximum of 5 minutes (300 seconds)
-        sh '''
+        sh """
           URL="${minikubeServiceUrl}"
           max_attempts=60
           attempt=0
@@ -146,7 +146,7 @@ pipeline {
             echo "Error: Service failed to become ready after $((max_attempts * 5)) seconds."
             exit 1 // Fail the pipeline
           fi
-        '''
+        """
 
         echo "ZAP scanning URL: ${minikubeServiceUrl}"
         
