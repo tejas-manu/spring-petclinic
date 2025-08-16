@@ -142,16 +142,17 @@ pipeline {
             fi
           done
           
-          if [ $http_code -ne 200 ]; then
-            echo "Error: Service failed to become ready after $((max_attempts * 5)) seconds."
+          if [ \$http_code -ne 200 ]; then
+            echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
             exit 1 // Fail the pipeline
           fi
         """
 
-        echo "ZAP scanning URL: ${minikubeServiceUrl}"
+        def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
+        echo "ZAP scanning URL: ${zapUrl}"
         
         // Run ZAP baseline scan using the official Docker image
-        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t ${minikubeServiceUrl} -I -r zap_report.html"
+        sh "docker run --rm -v \$(pwd):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
 
         // Archive the ZAP report for later inspection
         archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
