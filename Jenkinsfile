@@ -228,13 +228,31 @@ pipeline {
                     """
 
                     // Clean up old report files before starting the new scan
-                    sh "rm -f zap_report.html"
+                    sh 'docker pull zaproxy/zap-stable'
+                    sh 'docker run -dt --name owasp owasp/zap2docker-stable /bin/bash'
 
-                    def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
-                    echo "ZAP scanning URL: ${zapUrl}"
+                    sh 'docker exec owasp mkdir /zap/wrk'
 
-                    // Run the ZAP scan
-                    sh "sudo docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+                    sh """
+                        docker exec owasp \
+                        zap-baseline.py \
+                        -t ${zapUrl} \
+                        -r zap_report.html \
+                        -I
+                    """
+
+                    sh '''
+                        docker cp owasp:/zap/wrk/report.html ${WORKSPACE}/report.html
+                    '''
+
+                    
+                    // sh "rm -f zap_report.html"
+
+                    // def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
+                    // echo "ZAP scanning URL: ${zapUrl}"
+
+                    // // Run the ZAP scan
+                    // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
                     
                     archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
                 }
@@ -246,6 +264,11 @@ pipeline {
   post {
       always {
         echo 'Cleaning up...'
+
+        sh '''
+             docker stop owasp
+             docker rm owasp
+         '''
         sh 'docker rmi ${DOCKER_IMAGE} || true'
         sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
 
