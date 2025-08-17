@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 RUN groupadd -g $JENKINS_GID zap_group && \
     useradd -m -s /bin/bash -u $JENKINS_UID -g $JENKINS_GID zap_user
 
-RUN groupadd --gid $DOCKER_GID docker
+RUN groupmod --gid $DOCKER_GID docker
 
 # Add zap_user to the docker group so they can use the docker daemon
 RUN usermod -aG docker zap_user
