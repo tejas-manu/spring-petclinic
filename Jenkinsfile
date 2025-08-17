@@ -83,7 +83,7 @@ pipeline {
                 echo "Running ZAP Baseline Scan..."
                 def zapUrl = "https://jaybird-valid-hornet.ngrok-free.app"
                 sh """
-                  docker run owasp \
+                  docker exec owasp \
                   zap-baseline.py \
                   -t ${zapUrl} \
                   -r zap_report.html \
