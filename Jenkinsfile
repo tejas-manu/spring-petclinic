@@ -15,6 +15,125 @@ pipeline {
         checkout scm
       }
     }
+
+        stage('ZAP Scan') {
+        // agent {
+        //     docker {
+        //         // Use the image you just built and pushed
+        //         image "jenkins-with-zap:${BUILD_NUMBER}"
+        //         args '-v /var/run/docker.sock:/var/run/docker.sock'
+        //     }
+        // }
+            steps {
+                script {
+                    echo "Waiting for ArgoCD to sync and application to be deployed..."
+                    def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
+                    echo "Health check URL: ${minikubeServiceUrl}"
+
+                    sh """
+                        URL="${minikubeServiceUrl}"
+                        max_attempts=60
+                        attempt=0
+                        while [ \$attempt -lt \$max_attempts ]; do
+                            echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
+                            http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
+                            if [ "\$http_code" -eq 200 ]; then
+                                echo "Service is up and running! Proceeding with ZAP scan."
+                                break
+                            else
+                                echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
+                                sleep 5
+                                attempt=\$((attempt + 1))
+                            fi
+                        done
+                        if [ "\$http_code" -ne 200 ]; then
+                            echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
+                            exit 1
+                        fi
+                    """
+                }
+            }
+
+    }
+
+    stage('Pulling ZAP Image') {
+        steps {
+            script {
+                echo "Pulling ZAP Image from DockerHub..."
+
+                sh 'docker pull zaproxy/zap-stable'
+                sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+
+            }
+        }
+    }
+
+    stage('Run ZAP Scan') {
+        steps {
+            script {
+                echo "Creating directory..."
+                sh 'docker exec owasp mkdir /zap/wrk'
+            }
+        }
+    }
+
+    stage('ZAP Baseline Scan') {
+        steps {
+            script {
+                echo "Running ZAP Baseline Scan..."
+
+                sh """
+                  docker exec owasp \
+                  zap-baseline.py \
+                  -t ${zapUrl} \
+                  -r zap_report.html \
+                  -I
+                """
+            }
+        }
+    }
+
+    stage('Copy ZAP Report') {
+        steps {
+            script {
+                    echo "Archiving ZAP Report..."
+                    sh '''
+                        docker cp owasp:/zap/wrk/report.html ${WORKSPACE}/report.html
+                    '''
+            }
+        }
+    }
+
+    stage('Archive ZAP Report') {
+        steps {
+            script {
+                    echo "Archiving ZAP Report..."
+
+                    archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+            }
+        }
+    }
+  }
+
+  post {
+      always {
+        echo 'Cleaning up...'
+
+        sh '''
+             docker stop owasp
+             docker rm owasp
+         '''
+        sh 'docker rmi ${DOCKER_IMAGE} || true'
+        sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
+
+        cleanWs()
+
+        echo 'Cleanup finished.'
+    }
+  }
+}
+
+
   
 
     // stage('Build and Test') {
@@ -192,120 +311,3 @@ pipeline {
 //         }
 //     }
 
-    stage('ZAP Scan') {
-        // agent {
-        //     docker {
-        //         // Use the image you just built and pushed
-        //         image "jenkins-with-zap:${BUILD_NUMBER}"
-        //         args '-v /var/run/docker.sock:/var/run/docker.sock'
-        //     }
-        // }
-            steps {
-                script {
-                    echo "Waiting for ArgoCD to sync and application to be deployed..."
-                    def minikubeServiceUrl = "https://jaybird-valid-hornet.ngrok-free.app/actuator/health"
-                    echo "Health check URL: ${minikubeServiceUrl}"
-
-                    sh """
-                        URL="${minikubeServiceUrl}"
-                        max_attempts=60
-                        attempt=0
-                        while [ \$attempt -lt \$max_attempts ]; do
-                            echo "Attempt \$((attempt + 1)) of \$max_attempts: Checking service availability at \$URL..."
-                            http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
-                            if [ "\$http_code" -eq 200 ]; then
-                                echo "Service is up and running! Proceeding with ZAP scan."
-                                break
-                            else
-                                echo "Service not yet ready. Status code: \$http_code. Waiting 5 seconds..."
-                                sleep 5
-                                attempt=\$((attempt + 1))
-                            fi
-                        done
-                        if [ "\$http_code" -ne 200 ]; then
-                            echo "Error: Service failed to become ready after \$((max_attempts * 5)) seconds."
-                            exit 1
-                        fi
-                    """
-                }
-            }
-
-    }
-
-    stage('Pulling ZAP Image') {
-        steps {
-            script {
-                echo "Pulling ZAP Image from DockerHub..."
-
-                sh 'docker pull zaproxy/zap-stable'
-                sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
-
-            }
-        }
-    }
-
-    stage('Run ZAP Scan') {
-        steps {
-            script {
-                echo "Creating directory..."
-                sh 'docker exec owasp mkdir /zap/wrk'
-            }
-        }
-    }
-
-    stage('ZAP Baseline Scan') {
-        steps {
-            script {
-                echo "Running ZAP Baseline Scan..."
-
-                sh """
-                  docker exec owasp \
-                  zap-baseline.py \
-                  -t ${zapUrl} \
-                  -r zap_report.html \
-                  -I
-                """
-            }
-        }
-    }
-
-    stage('Copy ZAP Report') {
-        steps {
-            script {
-                    echo "Archiving ZAP Report..."
-                    sh '''
-                        docker cp owasp:/zap/wrk/report.html ${WORKSPACE}/report.html
-                    '''
-            }
-        }
-    }
-
-    stage('Archive ZAP Report') {
-        steps {
-            script {
-                    echo "Archiving ZAP Report..."
-
-                    archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-            }
-        }
-    }
-
-
-  post {
-      always {
-        echo 'Cleaning up...'
-
-        sh '''
-             docker stop owasp
-             docker rm owasp
-         '''
-        sh 'docker rmi ${DOCKER_IMAGE} || true'
-        sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
-
-        cleanWs()
-
-        echo 'Cleanup finished.'
-    }
-  }
-}
-}
