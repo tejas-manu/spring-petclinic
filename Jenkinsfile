@@ -229,7 +229,7 @@ pipeline {
 
                     // Clean up old report files before starting the new scan
                     sh 'docker pull zaproxy/zap-stable'
-                    sh 'docker run -dt --name owasp owasp/zap2docker-stable /bin/bash'
+                    sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
 
                     sh 'docker exec owasp mkdir /zap/wrk'
 
