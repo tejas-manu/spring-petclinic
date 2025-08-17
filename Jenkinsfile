@@ -81,7 +81,7 @@ pipeline {
         steps {
             script {
                 echo "Running ZAP Baseline Scan..."
-
+                def zapUrl = "https://jaybird-valid-hornet.ngrok-free.app"
                 sh """
                   docker run owasp \
                   zap-baseline.py \
