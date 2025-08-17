@@ -22,7 +22,7 @@ RUN groupadd -g $JENKINS_GID zap_group && \
 RUN usermod -aG docker zap_user
 
 # Pull the ZAP image during the build to avoid pulling it in the pipeline
-RUN docker pull zaproxy/zap-stable
+# RUN docker pull zaproxy/zap-stable
 
 # Switch to the new user
 USER zap_user
