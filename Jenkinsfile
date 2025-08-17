@@ -269,7 +269,7 @@ pipeline {
         }
     }
 
-    stage('Archive ZAP Report') {
+    stage('Copy ZAP Report') {
         steps {
             script {
                     echo "Archiving ZAP Report..."
