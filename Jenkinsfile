@@ -15,6 +15,7 @@ pipeline {
         checkout scm
       }
     }
+  }
 
     // stage('Build and Test') {
     //   agent {
@@ -306,5 +307,4 @@ pipeline {
         echo 'Cleanup finished.'
     }
   }
-}
 }
