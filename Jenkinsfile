@@ -167,38 +167,38 @@ pipeline {
 //   }
 // }
 
-stage('Build Custom ZAP Agent Image') {
-        steps {
-            script {
-                // Dynamically get the UID and GID of the current Jenkins agent
-                def jenkinsUid = sh(returnStdout: true, script: 'id -u jenkins').trim()
-                def jenkinsGid = sh(returnStdout: true, script: 'id -g jenkins').trim()
+// stage('Build Custom ZAP Agent Image') {
+//         steps {
+//             script {
+//                 // Dynamically get the UID and GID of the current Jenkins agent
+//                 def jenkinsUid = sh(returnStdout: true, script: 'id -u jenkins').trim()
+//                 def jenkinsGid = sh(returnStdout: true, script: 'id -g jenkins').trim()
                 
-                // Define the tag for your new image, using the build number
-                def customImageTag = "jenkins-with-zap:${BUILD_NUMBER}"
+//                 // Define the tag for your new image, using the build number
+//                 def customImageTag = "jenkins-with-zap:${BUILD_NUMBER}"
 
-                echo "Building custom agent image with UID: ${jenkinsUid}, GID: ${jenkinsGid}"
+//                 echo "Building custom agent image with UID: ${jenkinsUid}, GID: ${jenkinsGid}"
                 
-                // Build the image, passing the dynamic UID/GID
-                sh """
-                    docker build \\
-                    --build-arg JENKINS_UID=${jenkinsUid} \\
-                    --build-arg JENKINS_GID=${jenkinsGid} \\
-                    -t ${customImageTag} \\
-                    -f jenkins-agent/Dockerfile .
-                """
-            }
-        }
-    }
+//                 // Build the image, passing the dynamic UID/GID
+//                 sh """
+//                     docker build \\
+//                     --build-arg JENKINS_UID=${jenkinsUid} \\
+//                     --build-arg JENKINS_GID=${jenkinsGid} \\
+//                     -t ${customImageTag} \\
+//                     -f jenkins-agent/Dockerfile .
+//                 """
+//             }
+//         }
+//     }
 
     stage('ZAP Scan') {
-        agent {
-            docker {
-                // Use the image you just built and pushed
-                image "jenkins-with-zap:${BUILD_NUMBER}"
-                args '-v /var/run/docker.sock:/var/run/docker.sock'
-            }
-        }
+        // agent {
+        //     docker {
+        //         // Use the image you just built and pushed
+        //         image "jenkins-with-zap:${BUILD_NUMBER}"
+        //         args '-v /var/run/docker.sock:/var/run/docker.sock'
+        //     }
+        // }
             steps {
                 script {
                     echo "Waiting for ArgoCD to sync and application to be deployed..."
@@ -234,9 +234,18 @@ stage('Build Custom ZAP Agent Image') {
                     echo "ZAP scanning URL: ${zapUrl}"
 
                     // Run the ZAP scan
-                    sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
+                    sh "docker run -d --name zap-container zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
 
-                    // Archive the ZAP report for later inspection
+                    // Wait for the scan to finish
+                    sh 'docker logs -f zap-container | grep "Completed scan"'
+                    
+                    // Copy the report from the container to the host
+                    sh 'docker cp zap-container:/zap_report.html .'
+                    
+                    // Clean up the container
+                    sh 'docker stop zap-container'
+                    sh 'docker rm zap-container'
+                    
                     archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
                 }
             }
