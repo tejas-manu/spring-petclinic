@@ -83,7 +83,7 @@ pipeline {
                 echo "Running ZAP Baseline Scan..."
 
                 sh """
-                  docker exec owasp \
+                  docker run owasp \
                   zap-baseline.py \
                   -t ${zapUrl} \
                   -r zap_report.html \
