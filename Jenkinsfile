@@ -222,6 +222,8 @@ pipeline {
         sh 'docker rmi ${DOCKER_IMAGE} || true'
         sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
 
+        sh 'docker rmi $(docker images -q) || true'
+
         cleanWs()
         echo 'Cleanup finished.'
     }
