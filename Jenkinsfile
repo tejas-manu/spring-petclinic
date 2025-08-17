@@ -226,36 +226,65 @@ pipeline {
                             exit 1
                         fi
                     """
+                }
+            }
 
-                    // Clean up old report files before starting the new scan
-                    sh 'docker pull zaproxy/zap-stable'
-                    sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+    }
 
-                    sh 'docker exec owasp mkdir /zap/wrk'
+    stage('Pulling ZAP Image') {
+        steps {
+            script {
+                echo "Pulling ZAP Image from DockerHub..."
 
-                    sh """
-                        docker exec owasp \
-                        zap-baseline.py \
-                        -t ${zapUrl} \
-                        -r zap_report.html \
-                        -I
-                    """
+                sh 'docker pull zaproxy/zap-stable'
+                sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
 
+            }
+        }
+    }
+
+    stage('Run ZAP Scan') {
+        steps {
+            script {
+                echo "Creating directory..."
+                sh 'docker exec owasp mkdir /zap/wrk'
+            }
+        }
+    }
+
+    stage('ZAP Baseline Scan') {
+        steps {
+            script {
+                echo "Running ZAP Baseline Scan..."
+
+                sh """
+                  docker exec owasp \
+                  zap-baseline.py \
+                  -t ${zapUrl} \
+                  -r zap_report.html \
+                  -I
+                """
+            }
+        }
+    }
+
+    stage('Archive ZAP Report') {
+        steps {
+            script {
+                    echo "Archiving ZAP Report..."
                     sh '''
                         docker cp owasp:/zap/wrk/report.html ${WORKSPACE}/report.html
                     '''
+            }
+        }
+    }
 
-                    
-                    // sh "rm -f zap_report.html"
+    stage('Archive ZAP Report') {
+        steps {
+            script {
+                    echo "Archiving ZAP Report..."
 
-                    // def zapUrl = minikubeServiceUrl.replace("/actuator/health", "")
-                    // echo "ZAP scanning URL: ${zapUrl}"
-
-                    // // Run the ZAP scan
-                    // sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
-                    
                     archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-                }
             }
         }
     }
@@ -277,4 +306,5 @@ pipeline {
         echo 'Cleanup finished.'
     }
   }
+}
 }
