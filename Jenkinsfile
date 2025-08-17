@@ -234,17 +234,7 @@ pipeline {
                     echo "ZAP scanning URL: ${zapUrl}"
 
                     // Run the ZAP scan
-                    sh "docker run -d --name zap-container zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
-
-                    // Wait for the scan to finish
-                    sh 'docker logs -f zap-container | grep "Completed scan"'
-                    
-                    // Copy the report from the container to the host
-                    sh 'docker cp zap-container:/zap_report.html .'
-                    
-                    // Clean up the container
-                    sh 'docker stop zap-container'
-                    sh 'docker rm zap-container'
+                    sh "sudo docker run --rm -v \$(pwd):/zap/wrk/:rw -e HOME=/zap/wrk/ zaproxy/zap-stable zap-baseline.py -t ${zapUrl} -I -r zap_report.html"
                     
                     archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
                 }
