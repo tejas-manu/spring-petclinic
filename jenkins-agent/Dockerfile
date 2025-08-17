@@ -4,6 +4,7 @@ FROM jenkins/inbound-agent:latest-jdk17
 # Use arguments to define the UID and GID (replace with your values from Step 1)
 ARG JENKINS_UID=111
 ARG JENKINS_GID=113
+ARG DOCKER_GID=114
 
 # Install necessary tools
 USER root
@@ -18,8 +19,11 @@ RUN apt-get update && apt-get install -y \
 RUN groupadd -g $JENKINS_GID zap_group && \
     useradd -m -s /bin/bash -u $JENKINS_UID -g $JENKINS_GID zap_user
 
+RUN groupadd --gid $DOCKER_GID docker
+
 # Add zap_user to the docker group so they can use the docker daemon
 RUN usermod -aG docker zap_user
+
 
 # Pull the ZAP image during the build to avoid pulling it in the pipeline
 # RUN docker pull zaproxy/zap-stable
