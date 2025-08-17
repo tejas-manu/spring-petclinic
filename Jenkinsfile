@@ -98,7 +98,7 @@ pipeline {
             script {
                     echo "Archiving ZAP Report..."
                     sh '''
-                        docker cp owasp:/zap/wrk/report.html ${WORKSPACE}/report.html
+                        docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
                     '''
             }
         }
