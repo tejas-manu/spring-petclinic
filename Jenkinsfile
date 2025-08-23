@@ -99,7 +99,7 @@ pipeline {
         script {
           echo "Starting application container for ZAP scan..."
           // The `docker run -d` command outputs the container ID, which we capture.
-          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8090 ${DOCKER_IMAGE}").trim()
+          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8090 --cgroupns=host ${DOCKER_IMAGE}").trim()
           
           env.APP_CONTAINER_ID = containerId
           
