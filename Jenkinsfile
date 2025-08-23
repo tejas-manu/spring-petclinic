@@ -141,8 +141,8 @@ pipeline {
     stage('Check Application Health') {
       steps {
         script {
-          echo "Waiting for the application to be up and running on port 9090..."
-          def checkUrl = "http://localhost:9090/actuator/health"
+          def hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+          def checkUrl = "http://${hostIp}:9090/actuator/health"
           def maxAttempts = 60
           def attempt = 0
           def httpCode
@@ -150,9 +150,8 @@ pipeline {
           while (attempt < maxAttempts) {
             echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
             
-            // Use sh(returnStdout: true) to capture the output directly into a Groovy variable
             httpCode = sh(
-              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl}",
+              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
               returnStdout: true
             ).trim()
             
@@ -161,7 +160,7 @@ pipeline {
               break
             } else {
               echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
-              sleep 5
+              sh "sleep 5"
               attempt++
             }
           }
