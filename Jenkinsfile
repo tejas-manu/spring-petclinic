@@ -123,7 +123,7 @@ pipeline {
       steps {
         script {
           echo "Waiting for the application to be up and running on port 9090..."
-          def checkUrl = "http://host.docker.internal:9090/actuator/health"
+          def checkUrl = "http://localhost:9090/actuator/health"
           sh """
             URL="${checkUrl}"
             max_attempts=60
@@ -162,7 +162,7 @@ pipeline {
       steps {
         script {
           echo "Running ZAP Baseline Scan..."
-          def zapUrl = "http://host.docker.internal:9090"
+          def zapUrl = "http://localhost:9090"
           sh """
               docker exec owasp \
               zap-baseline.py \
