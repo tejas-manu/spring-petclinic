@@ -12,6 +12,24 @@ pipeline {
   }
 
   stages {
+    
+    stage('Pre-Build Cleanup') {
+      steps {
+        echo 'Stopping all running containers...'
+        sh 'docker stop $(docker ps -a -q) || true'
+
+        echo 'Removing all stopped containers...'
+        sh 'docker rm $(docker ps -a -q) || true'
+
+        // Add a delay here to give the Docker daemon time to free up resources
+        echo 'Pausing for 5 seconds...'
+        sh 'sleep 5'
+
+        echo 'Removing all images...'
+        sh 'docker rmi $(docker images -a -q) || true'
+      }
+    }
+    
     stage('Checkout') {
       steps {
         checkout scm
