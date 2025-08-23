@@ -29,7 +29,7 @@ pipeline {
         sh 'docker rmi $(docker images -a -q) || true'
       }
     }
-    
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -143,29 +143,65 @@ pipeline {
         script {
           echo "Waiting for the application to be up and running on port 9090..."
           def checkUrl = "http://localhost:9090/actuator/health"
-          sh """
-            URL="${checkUrl}"
-            max_attempts=60
-            attempt=0
-            while [ \$attempt -lt \$max_attempts ]; do
-                http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
-                if [ "\$http_code" -eq 200 ]; then
-                  echo "Application is up! Proceeding with ZAP scan."
-                  break
-                else
-                  echo "App not ready. Status: \$http_code. Waiting 5s..."
-                  sleep 5
-                  attempt=\$((attempt + 1))
-                fi
-            done
-            if [ "\$http_code" -ne 200 ]; then
-               echo "Error: Application failed to become ready."
-               exit 1
-            fi
-          """
+          def maxAttempts = 60
+          def attempt = 0
+          def httpCode
+
+          while (attempt < maxAttempts) {
+            echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
+            
+            // Use sh(returnStdout: true) to capture the output directly into a Groovy variable
+            httpCode = sh(
+              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl}",
+              returnStdout: true
+            ).trim()
+            
+            if (httpCode == "200") {
+              echo "Service is up and running! Proceeding with ZAP scan."
+              break
+            } else {
+              echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
+              sleep 5
+              attempt++
+            }
+          }
+
+          if (httpCode != "200") {
+            echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
+            error("Application health check failed.")
+          }
         }
       }
     }
+
+    // stage('Check Application Health') {
+    //   steps {
+    //     script {
+    //       echo "Waiting for the application to be up and running on port 9090..."
+    //       def checkUrl = "http://localhost:9090/actuator/health"
+    //       sh """
+    //         URL="${checkUrl}"
+    //         max_attempts=60
+    //         attempt=0
+    //         while [ \$attempt -lt \$max_attempts ]; do
+    //             http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
+    //             if [ "\$http_code" -eq 200 ]; then
+    //               echo "Application is up! Proceeding with ZAP scan."
+    //               break
+    //             else
+    //               echo "App not ready. Status: \$http_code. Waiting 5s..."
+    //               sleep 5
+    //               attempt=\$((attempt + 1))
+    //             fi
+    //         done
+    //         if [ "\$http_code" -ne 200 ]; then
+    //            echo "Error: Application failed to become ready."
+    //            exit 1
+    //         fi
+    //       """
+    //     }
+    //   }
+    // }
 
     stage('Run ZAP Scan') {
       steps {
