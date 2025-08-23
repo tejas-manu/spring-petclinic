@@ -32,4 +32,3 @@ EXPOSE 8090
 # ENTRYPOINT ["java", "-Dspring.profiles.active=postgres", "-jar", "app.jar", "--server.port=8090"]
 
 ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=8090"]
-CMD ["--management.metrics.enable.all=false"]

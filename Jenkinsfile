@@ -67,7 +67,7 @@ pipeline {
       steps {
         script {
           // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL tejas1205/petclinic:${BUILD_NUMBER}'
-          sh 'trivy image --severity HIGH,CRITICAL tejas1205/petclinic:${BUILD_NUMBER}'
+          sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
         }
       }
     }
