@@ -11,8 +11,6 @@ pipeline {
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
   }
 
-  def APP_CONTAINER_ID
-
   stages {
     stage('Checkout') {
       steps {
