@@ -216,7 +216,7 @@ pipeline {
       steps {
         script {
           echo "Running ZAP Baseline Scan..."
-          def zapUrl = "http://localhost:9090"
+          def zapUrl = "http://${hostIp}:9090"
           sh """
               docker exec owasp \
               zap-baseline.py \
