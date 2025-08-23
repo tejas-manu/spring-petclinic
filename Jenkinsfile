@@ -7,7 +7,7 @@ pipeline {
 
   environment {
     // DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
-    ECR_REPOSITORY_URI = '318488421234.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
+    ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
   }
 
