@@ -141,7 +141,7 @@ pipeline {
     stage('Check Application Health') {
       steps {
         script {
-          def hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+          env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
           def checkUrl = "http://${hostIp}:9090/actuator/health"
           def maxAttempts = 60
           def attempt = 0
