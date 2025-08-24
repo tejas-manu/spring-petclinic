@@ -16,7 +16,7 @@ pipeline {
     
     JAR_FILE_NAME = "spring-petclinic-3.4.0-SNAPSHOT.jar"
     VERSION_LABEL = "build-${env.BUILD_NUMBER}"
-    ZIP_FILE_PATH = "target/petclinic-deployment-${env.BUILD_NUMBER}.zip"
+    ZIP_FILE_PATH = "petclinic-deployment-${env.BUILD_NUMBER}.zip"
   }
 
   stages {
