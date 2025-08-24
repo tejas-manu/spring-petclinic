@@ -6,9 +6,17 @@ pipeline {
   }
 
   environment {
-    // DOCKER_IMAGE = "tejas1205/petclinic:${BUILD_NUMBER}"
     ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
+
+    AWS_DEFAULT_REGION = 'us-east-1'
+    EB_APP_NAME = 'petclinic'
+    EB_ENV_NAME = 'petclinic-env-1'
+    S3_BUCKET = 'my-petclinic-deployment-bucket'
+    
+    JAR_FILE_NAME = "spring-petclinic-3.4.0-SNAPSHOT.jar"
+    VERSION_LABEL = "build-${env.BUILD_NUMBER}"
+    ZIP_FILE_PATH = "target/petclinic-deployment-${env.BUILD_NUMBER}.zip"
   }
 
   stages {
@@ -21,7 +29,6 @@ pipeline {
         echo 'Removing all stopped containers...'
         sh 'docker rm $(docker ps -a -q) || true'
 
-        // Add a delay here to give the Docker daemon time to free up resources
         echo 'Pausing for 5 seconds...'
         sh 'sleep 5'
 
@@ -37,18 +44,18 @@ pipeline {
     }
 
 
-    // stage('Build and Test') {
-    //   agent {
-    //     docker {
-    //       image 'maven:3.9.6-eclipse-temurin-17'
-    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
-    //     }
-    //   }
+    stage('Build and Test') {
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
       
-    //   steps {
-    //     sh 'mvn clean package'
-    //   }
-    // }
+      steps {
+        sh 'mvn clean package'
+      }
+    }
 
 
     // stage('Static Code Analysis') {
@@ -71,184 +78,179 @@ pipeline {
 
 
 
-    stage('Build Docker Image') {
-      steps {
-        script {
-          sh "docker build -t ${DOCKER_IMAGE} ."
-          echo "Docker image built: ${DOCKER_IMAGE}"
-        }
-      }
-    }
-
-
-    stage('Trivia Scan') {
-      steps {
-        script {
-          // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL tejas1205/petclinic:${BUILD_NUMBER}'
-          sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
-        }
-      }
-    }
-
-    // stage('Publish to Nexus') {
+    // stage('Build Docker Image') {
     //   steps {
-    //     echo 'Uploading artifacts to Nexus...'
-    //     // Use withCredentials to securely access Nexus credentials from Jenkins
-    //     withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIAL_ID, passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USER')]) {
-    //       sh "mvn deploy -DaltDeploymentRepository=nexus::default::${NEXUS_URL} -DrepositoryId=nexus -Dnexus.username=${NEXUS_USER} -Dnexus.password=${NEXUS_PASSWORD}"
+    //     script {
+    //       sh "docker build -t ${DOCKER_IMAGE} ."
+    //       echo "Docker image built: ${DOCKER_IMAGE}"
     //     }
     //   }
     // }
 
-    stage('Push Docker Image') {
-      steps {
-        script {
-            sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REPOSITORY_URI}"
-            
-            sh "docker build -t ${DOCKER_IMAGE} ."
-            
-            echo "Pushing Docker image to ECR: ${DOCKER_IMAGE}"
-            sh "docker push ${DOCKER_IMAGE}"
-        }
-      }
-    }
 
-    stage('Run Application for Scan') {
-      steps {
-        script {
-          echo "Starting application container for ZAP scan..."
-          // The `docker run -d` command outputs the container ID, which we capture.
-          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
+    // stage('Trivia Scan') {
+    //   steps {
+    //     script {
+    //       // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}'
+    //       sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+    //     }
+    //   }
+    // }
+
+    // // stage('Publish to Nexus') {
+    // //   steps {
+    // //     echo 'Uploading artifacts to Nexus...'
+    // //     // Use withCredentials to securely access Nexus credentials from Jenkins
+    // //     withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIAL_ID, passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USER')]) {
+    // //       sh "mvn deploy -DaltDeploymentRepository=nexus::default::${NEXUS_URL} -DrepositoryId=nexus -Dnexus.username=${NEXUS_USER} -Dnexus.password=${NEXUS_PASSWORD}"
+    // //     }
+    // //   }
+    // // }
+
+    // stage('Push Docker Image') {
+    //   steps {
+    //     script {
+    //         sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REPOSITORY_URI}"
+            
+    //         // sh "docker build -t ${DOCKER_IMAGE} ."
+            
+    //         echo "Pushing Docker image to ECR: ${DOCKER_IMAGE}"
+    //         sh "docker push ${DOCKER_IMAGE}"
+    //     }
+    //   }
+    // }
+
+    // stage('Run Application for Scan') {
+    //   steps {
+    //     script {
+    //       echo "Starting application container for ZAP scan..."
+    //       def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
           
-          env.APP_CONTAINER_ID = containerId
+    //       env.APP_CONTAINER_ID = containerId
           
-          echo "Application container ID: ${APP_CONTAINER_ID}"
-        }
-      }
-    }
+    //       echo "Application container ID: ${APP_CONTAINER_ID}"
+    //     }
+    //   }
+    // }
 
-    stage('Pulling ZAP Image') {
-      steps {
-        script {
-          echo "Pulling ZAP Image from DockerHub..."
+    // stage('Pulling ZAP Image') {
+    //   steps {
+    //     script {
+    //       echo "Pulling ZAP Image from DockerHub..."
 
-          sh 'docker pull zaproxy/zap-stable'
-          sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
-        }
-      }
-    }
-
-    stage('Check Application Health') {
-      steps {
-        script {
-          env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
-          def checkUrl = "http://${hostIp}:9090/actuator/health"
-          def maxAttempts = 60
-          def attempt = 0
-          def httpCode
-
-          while (attempt < maxAttempts) {
-            echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
-            
-            httpCode = sh(
-              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
-              returnStdout: true
-            ).trim()
-            
-            if (httpCode == "200") {
-              echo "Service is up and running! Proceeding with ZAP scan."
-              break
-            } else {
-              echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
-              sh "sleep 5"
-              attempt++
-            }
-          }
-
-          if (httpCode != "200") {
-            echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
-            error("Application health check failed.")
-          }
-        }
-      }
-    }
+    //       sh 'docker pull zaproxy/zap-stable'
+    //       sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+    //     }
+    //   }
+    // }
 
     // stage('Check Application Health') {
     //   steps {
     //     script {
-    //       echo "Waiting for the application to be up and running on port 9090..."
-    //       def checkUrl = "http://localhost:9090/actuator/health"
-    //       sh """
-    //         URL="${checkUrl}"
-    //         max_attempts=60
-    //         attempt=0
-    //         while [ \$attempt -lt \$max_attempts ]; do
-    //             http_code=\$(curl -s -o /dev/null -L -w "%{http_code}" \$URL)
-    //             if [ "\$http_code" -eq 200 ]; then
-    //               echo "Application is up! Proceeding with ZAP scan."
-    //               break
-    //             else
-    //               echo "App not ready. Status: \$http_code. Waiting 5s..."
-    //               sleep 5
-    //               attempt=\$((attempt + 1))
-    //             fi
-    //         done
-    //         if [ "\$http_code" -ne 200 ]; then
-    //            echo "Error: Application failed to become ready."
-    //            exit 1
-    //         fi
-    //       """
+    //       env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+    //       def checkUrl = "http://${hostIp}:9090/actuator/health"
+    //       def maxAttempts = 60
+    //       def attempt = 0
+    //       def httpCode
+
+    //       while (attempt < maxAttempts) {
+    //         echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
+            
+    //         httpCode = sh(
+    //           script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
+    //           returnStdout: true
+    //         ).trim()
+            
+    //         if (httpCode == "200") {
+    //           echo "Service is up and running! Proceeding with ZAP scan."
+    //           break
+    //         } else {
+    //           echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
+    //           sh "sleep 5"
+    //           attempt++
+    //         }
+    //       }
+
+    //       if (httpCode != "200") {
+    //         echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
+    //         error("Application health check failed.")
+    //       }
     //     }
     //   }
     // }
 
-    stage('Run ZAP Scan') {
+    // stage('Creating ZAP Directory to store report') {
+    //   steps {
+    //     script {
+    //       echo "Creating directory..."
+    //       sh 'docker exec owasp mkdir /zap/wrk'
+    //     }
+    //   }
+    // }
+
+
+    // stage('ZAP Baseline Scan') {
+    //   steps {
+    //     script {
+    //       echo "Running ZAP Baseline Scan..."
+    //       def zapUrl = "http://${hostIp}:9090"
+
+    //       echo "Running ZAP Baseline Scan...${zapUrl}"
+    //       sh """
+    //           docker exec owasp \
+    //           zap-baseline.py \
+    //           -t ${zapUrl} \
+    //           -r zap_report.html \
+    //           -I
+    //         """
+    //     }
+    //   }
+    // }
+
+
+    // stage('Copy ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+    //       sh '''
+    //           docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
+    //          '''
+    //     }
+    //   }
+    // }
+
+
+    // stage('Archive ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+
+    //       archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+    //     }
+    //   }
+    // }
+
+
+    stage('Deploy to Elastic Beanstalk') {
       steps {
         script {
-          echo "Creating directory..."
-          sh 'docker exec owasp mkdir /zap/wrk'
-        }
-      }
-    }
+            echo "Starting deployment to Elastic Beanstalk..."
 
+            // Package only the JAR file into a deployment bundle
+            echo "Packaging JAR into a deployment bundle..."
+            sh "zip -j ${ZIP_FILE_PATH} target/${JAR_FILE_NAME}"
 
-    stage('ZAP Baseline Scan') {
-      steps {
-        script {
-          echo "Running ZAP Baseline Scan..."
-          def zapUrl = "http://${hostIp}:9090"
+            // The following commands will automatically use the IAM role's permissions
+            echo "Uploading deployment bundle to S3..."
+            sh "aws s3 cp ${ZIP_FILE_PATH} s3://${S3_BUCKET}/${ZIP_FILE_PATH}"
+            
+            echo "Creating new application version in Elastic Beanstalk..."
+            sh "aws elasticbeanstalk create-application-version --application-name ${EB_APP_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket=${S3_BUCKET},S3Key=${ZIP_FILE_PATH}"
 
-          echo "Running ZAP Baseline Scan...${zapUrl}"
-          sh """
-              docker exec owasp \
-              zap-baseline.py \
-              -t ${zapUrl} \
-              -r zap_report.html \
-              -I
-            """
-        }
-      }
-    }
-
-
-    stage('Copy ZAP Report') {
-      steps {
-        script {
-          echo "Archiving ZAP Report..."
-          sh '''
-              docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
-             '''
-        }
-      }
-    }
-
-
-    stage('Archive ZAP Report') {
-      steps {
-        script {
-          echo "Archiving ZAP Report..."
-
-          archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+            echo "Updating Elastic Beanstalk environment..."
+            sh "aws elasticbeanstalk update-environment --environment-name ${EB_ENV_NAME} --version-label ${VERSION_LABEL}"
+            
+            echo "Deployment to Elastic Beanstalk initiated successfully!"
         }
       }
     }
@@ -258,15 +260,20 @@ pipeline {
       always {
         echo 'Cleaning up...'
 
-        sh '''
-             docker stop owasp
-             docker rm owasp
-           '''
-        
-        sh 'docker rmi ${DOCKER_IMAGE} || true'
-        sh 'docker rmi jenkins-with-zap:${BUILD_NUMBER} || true'
+        echo "Cleaning up temporary deployment files..."
+        sh "rm -f ${ZIP_FILE_PATH}"
 
-        sh 'docker rmi $(docker images -q) || true'
+        echo 'Stopping all running containers...'
+        sh 'docker stop $(docker ps -a -q) || true'
+
+        echo 'Removing all stopped containers...'
+        sh 'docker rm $(docker ps -a -q) || true'
+
+        echo 'Pausing for 5 seconds...'
+        sh 'sleep 5'
+
+        echo 'Removing all images...'
+        sh 'docker rmi $(docker images -a -q) || true'
 
         cleanWs()
         echo 'Cleanup finished.'
