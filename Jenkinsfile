@@ -54,6 +54,8 @@ pipeline {
       
       steps {
         sh 'mvn clean package'
+
+        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
       }
     }
 
@@ -236,9 +238,11 @@ pipeline {
         script {
             echo "Starting deployment to Elastic Beanstalk..."
 
+            unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'app.jar']
+
             // Package only the JAR file into a deployment bundle
             echo "Packaging JAR into a deployment bundle..."
-            sh "zip -j ${ZIP_FILE_PATH} target/*.jar"
+            sh "zip -j ${ZIP_FILE_PATH} app.jar"
 
             // The following commands will automatically use the IAM role's permissions
             echo "Uploading deployment bundle to S3..."
