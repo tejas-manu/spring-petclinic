@@ -238,7 +238,7 @@ pipeline {
 
             // Package only the JAR file into a deployment bundle
             echo "Packaging JAR into a deployment bundle..."
-            sh "zip -j ${ZIP_FILE_PATH} target/${JAR_FILE_NAME}"
+            sh "zip -j ${ZIP_FILE_PATH} target/*.jar"
 
             // The following commands will automatically use the IAM role's permissions
             echo "Uploading deployment bundle to S3..."
