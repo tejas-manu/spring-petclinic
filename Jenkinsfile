@@ -52,31 +52,31 @@ pipeline {
         }
       }
       
-      steps {
-        sh 'mvn clean package'
+    //   steps {
+    //     sh 'mvn clean package'
 
-        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-      }
-    }
+    //     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+    //   }
+    // }
 
 
-    stage('Static Code Analysis') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
+    // stage('Static Code Analysis') {
+    //   agent {
+    //     docker {
+    //       image 'maven:3.9.6-eclipse-temurin-17'
+    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
       
-      steps {
-        echo 'Running SonarQube analysis...'
-        withSonarQubeEnv('MySonarServer') {
-          sh "mvn sonar:sonar \
-              -Dsonar.projectKey=spring-petclinic-tejas \
-              -Dsonar.host.url=http://172.31.39.168:9000/"
-          }
-      }
-    }
+    //   steps {
+    //     echo 'Running SonarQube analysis...'
+    //     withSonarQubeEnv('MySonarServer') {
+    //       sh "mvn sonar:sonar \
+    //           -Dsonar.projectKey=spring-petclinic-tejas \
+    //           -Dsonar.host.url=http://172.31.39.168:9000/"
+    //       }
+    //   }
+    // }
 
 
 
@@ -90,14 +90,14 @@ pipeline {
     }
 
 
-    stage('Trivia Scan') {
-      steps {
-        script {
-          // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}'
-          sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
-        }
-      }
-    }
+    // stage('Trivia Scan') {
+    //   steps {
+    //     script {
+    //       // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}'
+    //       sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+    //     }
+    //   }
+    // }
 
     // stage('Publish to Nexus') {
     //   steps {
@@ -122,141 +122,168 @@ pipeline {
       }
     }
 
-    stage('Run Application for Scan') {
-      steps {
-        script {
-          echo "Starting application container for ZAP scan..."
-          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
+    // stage('Run Application for Scan') {
+    //   steps {
+    //     script {
+    //       echo "Starting application container for ZAP scan..."
+    //       def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
           
-          env.APP_CONTAINER_ID = containerId
+    //       env.APP_CONTAINER_ID = containerId
           
-          echo "Application container ID: ${APP_CONTAINER_ID}"
-        }
-      }
-    }
+    //       echo "Application container ID: ${APP_CONTAINER_ID}"
+    //     }
+    //   }
+    // }
 
-    stage('Pulling ZAP Image') {
-      steps {
-        script {
-          echo "Pulling ZAP Image from DockerHub..."
+    // stage('Pulling ZAP Image') {
+    //   steps {
+    //     script {
+    //       echo "Pulling ZAP Image from DockerHub..."
 
-          sh 'docker pull zaproxy/zap-stable'
-          sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
-        }
-      }
-    }
+    //       sh 'docker pull zaproxy/zap-stable'
+    //       sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+    //     }
+    //   }
+    // }
 
-    stage('Check Application Health') {
-      steps {
-        script {
-          env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
-          def checkUrl = "http://${hostIp}:9090/actuator/health"
-          def maxAttempts = 60
-          def attempt = 0
-          def httpCode
+    // stage('Check Application Health') {
+    //   steps {
+    //     script {
+    //       env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+    //       def checkUrl = "http://${hostIp}:9090/actuator/health"
+    //       def maxAttempts = 60
+    //       def attempt = 0
+    //       def httpCode
 
-          while (attempt < maxAttempts) {
-            echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
+    //       while (attempt < maxAttempts) {
+    //         echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
             
-            httpCode = sh(
-              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
-              returnStdout: true
-            ).trim()
+    //         httpCode = sh(
+    //           script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
+    //           returnStdout: true
+    //         ).trim()
             
-            if (httpCode == "200") {
-              echo "Service is up and running! Proceeding with ZAP scan."
-              break
-            } else {
-              echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
-              sh "sleep 5"
-              attempt++
-            }
-          }
+    //         if (httpCode == "200") {
+    //           echo "Service is up and running! Proceeding with ZAP scan."
+    //           break
+    //         } else {
+    //           echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
+    //           sh "sleep 5"
+    //           attempt++
+    //         }
+    //       }
 
-          if (httpCode != "200") {
-            echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
-            error("Application health check failed.")
-          }
-        }
-      }
-    }
+    //       if (httpCode != "200") {
+    //         echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
+    //         error("Application health check failed.")
+    //       }
+    //     }
+    //   }
+    // }
 
-    stage('Creating ZAP Directory to store report') {
-      steps {
+    // stage('Creating ZAP Directory to store report') {
+    //   steps {
+    //     script {
+    //       echo "Creating directory..."
+    //       sh 'docker exec owasp mkdir /zap/wrk'
+    //     }
+    //   }
+    // }
+
+
+    // stage('ZAP Baseline Scan') {
+    //   steps {
+    //     script {
+    //       echo "Running ZAP Baseline Scan..."
+    //       def zapUrl = "http://${hostIp}:9090"
+
+    //       echo "Running ZAP Baseline Scan...${zapUrl}"
+    //       sh """
+    //           docker exec owasp \
+    //           zap-baseline.py \
+    //           -t ${zapUrl} \
+    //           -r zap_report.html \
+    //           -I
+    //         """
+    //     }
+    //   }
+    // }
+
+
+    // stage('Copy ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+    //       sh '''
+    //           docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
+    //          '''
+    //     }
+    //   }
+    // }
+
+
+    // stage('Archive ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+
+    //       archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+    //     }
+    //   }
+    // }
+
+
+    // stage('Deploy to Elastic Beanstalk') {
+    //   steps {
+    //     script {
+    //         echo "Starting deployment to Elastic Beanstalk..."
+
+    //         unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'app.jar']
+
+    //         echo "Packaging JAR into a deployment bundle..."
+    //         sh "zip -j ${ZIP_FILE_PATH} app.jar"
+
+    //         echo "Uploading deployment bundle to S3..."
+    //         sh "aws s3 cp ${ZIP_FILE_PATH} s3://${S3_BUCKET}/${ZIP_FILE_PATH}"
+            
+    //         echo "Creating new application version in Elastic Beanstalk..."
+    //         sh "aws elasticbeanstalk create-application-version --application-name ${EB_APP_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket=${S3_BUCKET},S3Key=${ZIP_FILE_PATH}"
+
+    //         echo "Updating Elastic Beanstalk environment..."
+    //         sh "aws elasticbeanstalk update-environment --environment-name ${EB_ENV_NAME} --version-label ${VERSION_LABEL}"
+            
+    //         echo "Deployment to Elastic Beanstalk initiated successfully!"
+    //     }
+    //   }
+    // }
+
+    stage('Deploy to EC2 via SSM') {
+    steps {
         script {
-          echo "Creating directory..."
-          sh 'docker exec owasp mkdir /zap/wrk'
-        }
-      }
-    }
+            def ec2_instance_id = 'i-036b27fe576a906d4' // Replace with the ID of your target EC2 instance
+            def docker_image = "${DOCKER_IMAGE}"
 
-
-    stage('ZAP Baseline Scan') {
-      steps {
-        script {
-          echo "Running ZAP Baseline Scan..."
-          def zapUrl = "http://${hostIp}:9090"
-
-          echo "Running ZAP Baseline Scan...${zapUrl}"
-          sh """
-              docker exec owasp \
-              zap-baseline.py \
-              -t ${zapUrl} \
-              -r zap_report.html \
-              -I
+            // Use the aws ssm send-command to execute the Docker deployment script
+            sh """
+                aws ssm send-command \
+                --instance-ids "${ec2_instance_id}" \
+                --document-name "AWS-RunShellScript" \
+                --comment "Docker deployment via Jenkins" \
+                --parameters 'commands=["# Login to ECR
+                                    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_REPOSITORY_URI}",
+                                    "# Stop and remove old container
+                                    "docker stop my-petclinic-app || true",
+                                    "docker rm my-petclinic-app || true",
+                                    "# Pull new image from ECR
+                                    "docker pull ${docker_image}",
+                                    "# Start new container
+                                    "docker run -d -p 8080:8080 --name my-petclinic-app ${docker_image}"]'
             """
         }
-      }
     }
+}
+}
 
-
-    stage('Copy ZAP Report') {
-      steps {
-        script {
-          echo "Archiving ZAP Report..."
-          sh '''
-              docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
-             '''
-        }
-      }
-    }
-
-
-    stage('Archive ZAP Report') {
-      steps {
-        script {
-          echo "Archiving ZAP Report..."
-
-          archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-        }
-      }
-    }
-
-
-    stage('Deploy to Elastic Beanstalk') {
-      steps {
-        script {
-            echo "Starting deployment to Elastic Beanstalk..."
-
-            unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'app.jar']
-
-            echo "Packaging JAR into a deployment bundle..."
-            sh "zip -j ${ZIP_FILE_PATH} app.jar"
-
-            echo "Uploading deployment bundle to S3..."
-            sh "aws s3 cp ${ZIP_FILE_PATH} s3://${S3_BUCKET}/${ZIP_FILE_PATH}"
-            
-            echo "Creating new application version in Elastic Beanstalk..."
-            sh "aws elasticbeanstalk create-application-version --application-name ${EB_APP_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket=${S3_BUCKET},S3Key=${ZIP_FILE_PATH}"
-
-            echo "Updating Elastic Beanstalk environment..."
-            sh "aws elasticbeanstalk update-environment --environment-name ${EB_ENV_NAME} --version-label ${VERSION_LABEL}"
-            
-            echo "Deployment to Elastic Beanstalk initiated successfully!"
-        }
-      }
-    }
-  }
 
   post {
       always {
