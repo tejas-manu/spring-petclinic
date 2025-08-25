@@ -356,6 +356,55 @@ stage('Deploy to EC2 via SSM') {
     }
 }
 
+stage('Output Application Endpoint') {
+    steps {
+        script {
+            def ec2InstanceId = 'i-036b27fe576a906d4' // The ID of your target EC2 instance
+            def applicationPort = '8080' // The host port you are using
+
+            echo "Retrieving the public IP address of the EC2 instance..."
+            
+            // Use the aws ec2 describe-instances command to get the public IP address
+            def ipAddress = sh(
+                script: "aws ec2 describe-instances --instance-ids ${ec2InstanceId} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text",
+                returnStdout: true
+            ).trim()
+            
+            def endpointUrl = "http://${ipAddress}:${applicationPort}"
+            
+            echo "****************************************************************"
+            echo "Application has been successfully deployed!"
+            echo "You can access it at: ${endpointUrl}"
+            echo "****************************************************************"
+        }
+    }
+}
+
+
+stage('Output Elastic Beanstalk Endpoint') {
+    steps {
+        script {
+            def ebAppName = 'petclinic'
+            def ebEnvName = 'petclinic-env'
+
+            echo "Retrieving the Elastic Beanstalk endpoint..."
+
+            // Get the CNAME of the environment
+            def cname = sh(
+                script: "aws elasticbeanstalk describe-environments --application-name ${ebAppName} --environment-names ${ebEnvName} --query 'Environments[0].CNAME' --output text",
+                returnStdout: true
+            ).trim()
+            
+            def endpointUrl = "http://${cname}"
+            
+            echo "****************************************************************"
+            echo "Deployment to Elastic Beanstalk completed!"
+            echo "You can access your application at: ${endpointUrl}"
+            echo "****************************************************************"
+        }
+    }
+}
+
 
     }
   
