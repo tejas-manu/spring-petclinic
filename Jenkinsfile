@@ -337,9 +337,9 @@ stage('Deploy to EC2 via SSM') {
                   "aws ecr get-login-password --region ${env.AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${env.ECR_REPOSITORY_URI}",
                   "docker stop ${dockerContainerName} || true",
                   "docker rm ${dockerContainerName} || true",
-                  "docker stop $(docker ps -a -q) || true",
-                  "docker rm $(docker ps -a -q) || true",
-                  "docker rmi $(docker images -a -q) || true",
+                  "docker stop \$(docker ps -a -q) || true",
+                  "docker rm \$(docker ps -a -q) || true",
+                  "docker rmi \$(docker images -a -q) || true",
                   "docker pull ${fullImageUri}",
                   "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
                 ]
