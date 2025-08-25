@@ -369,7 +369,7 @@ stage('Deploy to EC2 via SSM') {
                 sleep 10
                 
                 invocationOutput = sh(
-                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2_instance_id} --region us-east-1",
+                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2InstanceId} --region us-east-1",
                     returnStdout: true
                 )
                 commandStatus = new groovy.json.JsonSlurper().parseText(invocationOutput).Status
