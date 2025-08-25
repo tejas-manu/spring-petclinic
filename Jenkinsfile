@@ -345,10 +345,44 @@ stage('Deploy to EC2 via SSM') {
             """
             
             // Write the JSON to a temporary file
-            writeFile(file: 'ssm-commands.json', text: json_input)
+            // writeFile(file: 'ssm-commands.json', text: json_input)
 
-            // Use the aws ssm send-command with --cli-input-json
-            sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
+            // // Use the aws ssm send-command with --cli-input-json
+            // sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
+
+            // 2. Send the command and capture the CommandId
+            def commandOutput = sh(
+                script: "aws ssm send-command --cli-input-json file://ssm-commands.json --region us-east-1",
+                returnStdout: true
+            )
+            def commandId = new groovy.json.JsonSlurper().parseText(commandOutput).Command.CommandId
+            echo "SSM Command sent with ID: ${commandId}"
+
+            // 3. Poll for the command status
+            def commandStatus = "Pending"
+            def maxAttempts = 20
+            def attempts = 0
+            def invocationOutput
+
+            while (commandStatus == "Pending" && attempts < maxAttempts) {
+                echo "Waiting for command ${commandId} to complete. Status: ${commandStatus}..."
+                sleep 10
+                
+                invocationOutput = sh(
+                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2_instance_id} --region us-east-1",
+                    returnStdout: true
+                )
+                commandStatus = new groovy.json.JsonSlurper().parseText(invocationOutput).Status
+                attempts++
+            }
+
+            // 4. Check the final status and output
+            if (commandStatus == "Success") {
+                echo "SSM command completed successfully!"
+            } else {
+                echo "SSM command failed. Final status: ${commandStatus}"
+                error("SSM deployment failed. Check the SSM console for more details.")
+            }
 
             // Clean up the temporary file
             sh 'rm ssm-commands.json'
@@ -385,7 +419,7 @@ stage('Output Elastic Beanstalk Endpoint') {
     steps {
         script {
             def ebAppName = 'petclinic'
-            def ebEnvName = 'petclinic-env'
+            def ebEnvName = 'petclinic-env-1'
 
             echo "Retrieving the Elastic Beanstalk endpoint..."
 
