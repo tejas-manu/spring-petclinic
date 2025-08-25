@@ -345,7 +345,7 @@ stage('Deploy to EC2 via SSM') {
             """
             
             // Write the JSON to a temporary file
-            // writeFile(file: 'ssm-commands.json', text: json_input)
+            writeFile(file: 'ssm-commands.json', text: json_input)
 
             // // Use the aws ssm send-command with --cli-input-json
             // sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
