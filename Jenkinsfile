@@ -285,28 +285,29 @@ pipeline {
 stage('Deploy to EC2 via SSM') {
     steps {
         script {
-            def ec2_instance_id = 'i-036b27fe576a906d4' // Replace with the ID of your target EC2 instance
-            def docker_image = "318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41"
-
-            // 1. Create a temporary JSON file with the corrected structure
-            def json_commands = """
+            // 1. Create a temporary JSON file with the corrected, full structure
+            def json_input = """
             {
-              "parameters": {
+              "InstanceIds": [
+                "i-036b27fe576a906d4"
+              ],
+              "DocumentName": "AWS-RunShellScript",
+              "Parameters": {
                 "commands": [
                   "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic",
                   "docker stop my-petclinic-app || true",
                   "docker rm my-petclinic-app || true",
-                  "docker pull ${docker_image}",
-                  "docker run -d -p 8080:8080 --name my-petclinic-app ${docker_image}"
+                  "docker pull 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41",
+                  "docker run -d -p 8080:8080 --name my-petclinic-app 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41"
                 ]
               }
             }
             """
             // Write the JSON to a temporary file
-            writeFile(file: 'ssm-commands.json', text: json_commands)
+            writeFile(file: 'ssm-commands.json', text: json_input)
 
             // 2. Use the aws ssm send-command with --cli-input-json
-            sh "aws ssm send-command --instance-ids ${ec2_instance_id} --document-name AWS-RunShellScript --cli-input-json file://ssm-commands.json"
+            sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
 
             // 3. Clean up the temporary file (optional but good practice)
             sh 'rm ssm-commands.json'
