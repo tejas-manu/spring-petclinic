@@ -397,6 +397,7 @@ stage('Output Application Endpoint') {
             def applicationPort = '8080' // The host port you are using
 
             echo "Retrieving the public IP address of the EC2 instance..."
+            sleep 10 
             
             // Use the aws ec2 describe-instances command to get the public IP address
             def ipAddress = sh(
