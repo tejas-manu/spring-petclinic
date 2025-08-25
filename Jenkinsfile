@@ -364,7 +364,7 @@ stage('Deploy to EC2 via SSM') {
             def attempts = 0
             def invocationOutput
 
-            while (commandStatus == "Pending" && attempts < maxAttempts) {
+            while ((commandStatus == "Pending" || commandStatus == "InProgress") && attempts < maxAttempts) {
                 echo "Waiting for command ${commandId} to complete. Status: ${commandStatus}..."
                 sleep 10
                 
@@ -376,7 +376,7 @@ stage('Deploy to EC2 via SSM') {
                 attempts++
             }
 
-            // 4. Check the final status and output
+            // 3. Check the final status and output
             if (commandStatus == "Success") {
                 echo "SSM command completed successfully!"
             } else {
