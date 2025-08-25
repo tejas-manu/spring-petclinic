@@ -282,34 +282,75 @@ pipeline {
     //     }
     // }
     // }
+// stage('Deploy to EC2 via SSM') {
+//     steps {
+//         script {
+//             // 1. Create a temporary JSON file with the corrected, full structure
+//             def json_input = """
+//             {
+//               "InstanceIds": [
+//                 "i-036b27fe576a906d4"
+//               ],
+//               "DocumentName": "AWS-RunShellScript",
+//               "Parameters": {
+//                 "commands": [
+//                   "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic",
+//                   "docker stop my-petclinic-app || true",
+//                   "docker rm my-petclinic-app || true",
+//                   "docker pull 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41",
+//                   "docker run -d -p 8080:8080 --name my-petclinic-app 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41"
+//                 ]
+//               }
+//             }
+//             """
+//             // Write the JSON to a temporary file
+//             writeFile(file: 'ssm-commands.json', text: json_input)
+
+//             // 2. Use the aws ssm send-command with --cli-input-json
+//             sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
+
+//             // 3. Clean up the temporary file (optional but good practice)
+//             sh 'rm ssm-commands.json'
+//         }
+//     }
+// }
+
 stage('Deploy to EC2 via SSM') {
     steps {
         script {
-            // 1. Create a temporary JSON file with the corrected, full structure
+            // Use the existing environment variables
+            def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
+            def imageTag = env.BUILD_NUMBER
+            def fullImageUri = "${env.ECR_REPOSITORY_URI}:${imageTag}"
+            def dockerContainerName = 'my-petclinic-app'
+            def containerPort = '8080'
+            def hostPort = '8080' // Or '9090' from our previous discussion
+
             def json_input = """
             {
               "InstanceIds": [
-                "i-036b27fe576a906d4"
+                "${ec2InstanceId}"
               ],
               "DocumentName": "AWS-RunShellScript",
               "Parameters": {
                 "commands": [
-                  "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic",
-                  "docker stop my-petclinic-app || true",
-                  "docker rm my-petclinic-app || true",
-                  "docker pull 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41",
-                  "docker run -d -p 8080:8080 --name my-petclinic-app 318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic:41"
+                  "aws ecr get-login-password --region ${env.AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${env.ECR_REPOSITORY_URI}",
+                  "docker stop ${dockerContainerName} || true",
+                  "docker rm ${dockerContainerName} || true",
+                  "docker pull ${fullImageUri}",
+                  "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
                 ]
               }
             }
             """
+            
             // Write the JSON to a temporary file
             writeFile(file: 'ssm-commands.json', text: json_input)
 
-            // 2. Use the aws ssm send-command with --cli-input-json
+            // Use the aws ssm send-command with --cli-input-json
             sh "aws ssm send-command --cli-input-json file://ssm-commands.json"
 
-            // 3. Clean up the temporary file (optional but good practice)
+            // Clean up the temporary file
             sh 'rm ssm-commands.json'
         }
     }
