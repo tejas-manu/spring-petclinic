@@ -321,7 +321,7 @@ stage('Deploy to EC2 via SSM') {
             // Use the existing environment variables
             def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
             def imageTag = env.BUILD_NUMBER
-            def fullImageUri = "${env.ECR_REPOSITORY_URI}:${imageTag}"
+            def fullImageUri = "${env.DOCKER_IMAGE}"
             def dockerContainerName = 'my-petclinic-app'
             def containerPort = '8080'
             def hostPort = '8080' // Or '9090' from our previous discussion
@@ -337,6 +337,9 @@ stage('Deploy to EC2 via SSM') {
                   "aws ecr get-login-password --region ${env.AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${env.ECR_REPOSITORY_URI}",
                   "docker stop ${dockerContainerName} || true",
                   "docker rm ${dockerContainerName} || true",
+                  "docker stop $(docker ps -a -q) || true",
+                  "docker rm $(docker ps -a -q) || true",
+                  "docker rmi $(docker images -a -q) || true",
                   "docker pull ${fullImageUri}",
                   "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
                 ]
