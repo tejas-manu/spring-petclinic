@@ -106,7 +106,13 @@ pipeline {
 
 
     stage('Publish to Nexus') {
-      agent any // This will run on the host or a new agent
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      
       steps {
         script {
           // Unarchive the JAR file from the build
@@ -121,12 +127,12 @@ pipeline {
                       xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd'>
                       <servers>
                           <server>
-                              <id>nexus-releases</id>
+                              <id>petclinic-maven-releases</id>
                               <username>\$NEXUS_USER</username>
                               <password>\$NEXUS_PASSWORD</password>
                           </server>
                           <server>
-                              <id>nexus-snapshots</id>
+                              <id>petclinic-maven-releases-snapshot</id>
                               <username>\$NEXUS_USER</username>
                               <password>\$NEXUS_PASSWORD</password>
                           </server>

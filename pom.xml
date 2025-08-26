@@ -455,7 +455,7 @@
 
   <distributionManagement>
       <repository>
-          <id>nexus-releases</id>
+          <id>petclinic-maven-releases</id>
           <name>Nexus Releases Repository</name>
           <url>http://172.31.39.168:8081/repository/petclinic-maven-releases/</url>
       </repository>
