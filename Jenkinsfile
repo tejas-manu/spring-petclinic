@@ -10,8 +10,8 @@ pipeline {
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
 
 
-    NEXUS_RELEASE_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases/'
-    NEXUS_SNAPSHOT_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/'
+    NEXUS_RELEASE_REPO = 'http://3.89.149.12:8081/repository/petclinic-maven-releases/'
+    NEXUS_SNAPSHOT_REPO = 'http://3.89.149.12:8081/repository/petclinic-maven-releases-snapshot/'
 
     AWS_DEFAULT_REGION = 'us-east-1'
     EB_APP_NAME = 'petclinic'
