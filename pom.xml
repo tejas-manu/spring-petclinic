@@ -457,12 +457,12 @@
       <repository>
           <id>petclinic-maven-releases</id>
           <name>Nexus Releases Repository</name>
-          <url>http://3.80.243.164:8081/repository/petclinic-maven-releases/</url>
+          <url>http://172.31.39.168:8081/repository/petclinic-maven-releases/</url>
       </repository>
       <snapshotRepository>
           <id>petclinic-maven-releases-snapshot</id>
           <name>Nexus Snapshots Repository</name>
-          <url>http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/</url>
+          <url>http://172.31.39.168:8081/repository/petclinic-maven-releases-snapshot/</url>
       </snapshotRepository>
   </distributionManagement>
 </project>
