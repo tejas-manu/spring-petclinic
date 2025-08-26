@@ -106,12 +106,12 @@ pipeline {
 
 
     stage('Publish to Nexus') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
+      // agent {
+      //   docker {
+      //     image 'maven:3.9.6-eclipse-temurin-17'
+      //     args '-v /var/run/docker.sock:/var/run/docker.sock'
+      //   }
+      // }
 
       steps {
         script {
@@ -143,7 +143,7 @@ pipeline {
               
               try {
                   echo "Deploying artifact to Nexus..."
-                  sh "mvn clean deploy -s settings.xml"
+                  sh "mvn deploy:deploy-file -Dfile=spring-petclinic-3.4.0-SNAPSHOT.jar -DrepositoryId=petclinic-maven-releases-snapshot -Durl=http://172.31.39.168:8081/repository/petclinic-maven-releases-snapshot/ -s settings.xml"
               } finally {
                   sh 'rm settings.xml'
               }
