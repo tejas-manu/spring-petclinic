@@ -13,8 +13,6 @@ pipeline {
     NEXUS_RELEASE_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases/'
     NEXUS_SNAPSHOT_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/'
 
-    
-
     AWS_DEFAULT_REGION = 'us-east-1'
     EB_APP_NAME = 'petclinic'
     EB_ENV_NAME = 'petclinic-env-1'
@@ -65,6 +63,47 @@ pipeline {
       }
     }
 
+
+    stage('Static Code Analysis') {
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      
+      steps {
+        echo 'Running SonarQube analysis...'
+        withSonarQubeEnv('MySonarServer') {
+          sh "mvn sonar:sonar \
+              -Dsonar.projectKey=spring-petclinic-tejas \
+              -Dsonar.host.url=http://172.31.39.168:9000/"
+          }
+      }
+    }
+
+
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          sh "docker build -t ${DOCKER_IMAGE} ."
+          echo "Docker image built: ${DOCKER_IMAGE}"
+        }
+      }
+    }
+
+
+    stage('Trivia Scan') {
+      steps {
+        script {
+          // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}'
+          sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+        }
+      }
+    }
+
+
     stage('Deploy Artifact to Nexus') {
       agent {
         docker {
@@ -112,331 +151,280 @@ pipeline {
       }
     }
 
-
-    // stage('Static Code Analysis') {
-    //   agent {
-    //     docker {
-    //       image 'maven:3.9.6-eclipse-temurin-17'
-    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
-    //     }
-    //   }
-      
-    //   steps {
-    //     echo 'Running SonarQube analysis...'
-    //     withSonarQubeEnv('MySonarServer') {
-    //       sh "mvn sonar:sonar \
-    //           -Dsonar.projectKey=spring-petclinic-tejas \
-    //           -Dsonar.host.url=http://172.31.39.168:9000/"
-    //       }
-    //   }
-    // }
-
-
-
-    // stage('Build Docker Image') {
-    //   steps {
-    //     script {
-    //       sh "docker build -t ${DOCKER_IMAGE} ."
-    //       echo "Docker image built: ${DOCKER_IMAGE}"
-    //     }
-    //   }
-    // }
-
-
-    // stage('Trivia Scan') {
-    //   steps {
-    //     script {
-    //       // sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}'
-    //       sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
-    //     }
-    //   }
-    // }
-
-
-    // // stage('Publish to Nexus') {
-    // //   steps {
-    // //     echo 'Uploading artifacts to Nexus...'
-    // //     // Use withCredentials to securely access Nexus credentials from Jenkins
-    // //     withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIAL_ID, passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USER')]) {
-    // //       sh "mvn deploy -DaltDeploymentRepository=nexus::default::${NEXUS_URL} -DrepositoryId=nexus -Dnexus.username=${NEXUS_USER} -Dnexus.password=${NEXUS_PASSWORD}"
-    // //     }
-    // //   }
-    // // }
-
-    // stage('Push Docker Image') {
-    //   steps {
-    //     script {
-    //         sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REPOSITORY_URI}"
+    stage('Push Docker Image') {
+      steps {
+        script {
+            sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REPOSITORY_URI}"
             
-    //         // sh "docker build -t ${DOCKER_IMAGE} ."
+            // sh "docker build -t ${DOCKER_IMAGE} ."
             
-    //         echo "Pushing Docker image to ECR: ${DOCKER_IMAGE}"
-    //         sh "docker push ${DOCKER_IMAGE}"
-    //     }
-    //   }
-    // }
+            echo "Pushing Docker image to ECR: ${DOCKER_IMAGE}"
+            sh "docker push ${DOCKER_IMAGE}"
+        }
+      }
+    }
 
-    // stage('Run Application for Scan') {
-    //   steps {
-    //     script {
-    //       echo "Starting application container for ZAP scan..."
-    //       def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
+    stage('Run Application for Scan') {
+      steps {
+        script {
+          echo "Starting application container for ZAP scan..."
+          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
           
-    //       env.APP_CONTAINER_ID = containerId
+          env.APP_CONTAINER_ID = containerId
           
-    //       echo "Application container ID: ${APP_CONTAINER_ID}"
-    //     }
-    //   }
-    // }
+          echo "Application container ID: ${APP_CONTAINER_ID}"
+        }
+      }
+    }
 
-    // stage('Pulling ZAP Image') {
-    //   steps {
-    //     script {
-    //       echo "Pulling ZAP Image from DockerHub..."
+    stage('Pulling ZAP Image') {
+      steps {
+        script {
+          echo "Pulling ZAP Image from DockerHub..."
 
-    //       sh 'docker pull zaproxy/zap-stable'
-    //       sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
-    //     }
-    //   }
-    // }
+          sh 'docker pull zaproxy/zap-stable'
+          sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+        }
+      }
+    }
 
-    // stage('Check Application Health') {
-    //   steps {
-    //     script {
-    //       env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
-    //       def checkUrl = "http://${hostIp}:9090/actuator/health"
-    //       def maxAttempts = 60
-    //       def attempt = 0
-    //       def httpCode
+    stage('Check Application Health') {
+      steps {
+        script {
+          env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+          def checkUrl = "http://${hostIp}:9090/actuator/health"
+          def maxAttempts = 60
+          def attempt = 0
+          def httpCode
 
-    //       while (attempt < maxAttempts) {
-    //         echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
+          while (attempt < maxAttempts) {
+            echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
             
-    //         httpCode = sh(
-    //           script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
-    //           returnStdout: true
-    //         ).trim()
+            httpCode = sh(
+              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
+              returnStdout: true
+            ).trim()
             
-    //         if (httpCode == "200") {
-    //           echo "Service is up and running! Proceeding with ZAP scan."
-    //           break
-    //         } else {
-    //           echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
-    //           sh "sleep 5"
-    //           attempt++
-    //         }
-    //       }
+            if (httpCode == "200") {
+              echo "Service is up and running! Proceeding with ZAP scan."
+              break
+            } else {
+              echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
+              sh "sleep 5"
+              attempt++
+            }
+          }
 
-    //       if (httpCode != "200") {
-    //         echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
-    //         error("Application health check failed.")
-    //       }
-    //     }
-    //   }
-    // }
+          if (httpCode != "200") {
+            echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
+            error("Application health check failed.")
+          }
+        }
+      }
+    }
 
-    // stage('Creating ZAP Directory to store report') {
-    //   steps {
-    //     script {
-    //       echo "Creating directory..."
-    //       sh 'docker exec owasp mkdir /zap/wrk'
-    //     }
-    //   }
-    // }
-
-
-    // stage('ZAP Baseline Scan') {
-    //   steps {
-    //     script {
-    //       echo "Running ZAP Baseline Scan..."
-    //       def zapUrl = "http://${hostIp}:9090"
-
-    //       echo "Running ZAP Baseline Scan...${zapUrl}"
-    //       sh """
-    //           docker exec owasp \
-    //           zap-baseline.py \
-    //           -t ${zapUrl} \
-    //           -r zap_report.html \
-    //           -I
-    //         """
-    //     }
-    //   }
-    // }
+    stage('Creating ZAP Directory to store report') {
+      steps {
+        script {
+          echo "Creating directory..."
+          sh 'docker exec owasp mkdir /zap/wrk'
+        }
+      }
+    }
 
 
-    // stage('Copy ZAP Report') {
-    //   steps {
-    //     script {
-    //       echo "Archiving ZAP Report..."
-    //       sh '''
-    //           docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
-    //          '''
-    //     }
-    //   }
-    // }
+    stage('ZAP Baseline Scan') {
+      steps {
+        script {
+          echo "Running ZAP Baseline Scan..."
+          def zapUrl = "http://${hostIp}:9090"
+
+          echo "Running ZAP Baseline Scan...${zapUrl}"
+          sh """
+              docker exec owasp \
+              zap-baseline.py \
+              -t ${zapUrl} \
+              -r zap_report.html \
+              -I
+            """
+        }
+      }
+    }
 
 
-    // stage('Archive ZAP Report') {
-    //   steps {
-    //     script {
-    //       echo "Archiving ZAP Report..."
+    stage('Copy ZAP Report') {
+      steps {
+        script {
+          echo "Archiving ZAP Report..."
+          sh '''
+              docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
+             '''
+        }
+      }
+    }
 
-    //       archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-    //     }
-    //   }
-    // }
+
+    stage('Archive ZAP Report') {
+      steps {
+        script {
+          echo "Archiving ZAP Report..."
+
+          archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+        }
+      }
+    }
 
 
-    // stage('Deploy to Elastic Beanstalk') {
-    //   steps {
-    //     script {
-    //         echo "Starting deployment to Elastic Beanstalk..."
+    stage('Deploy to Elastic Beanstalk') {
+      steps {
+        script {
+            echo "Starting deployment to Elastic Beanstalk..."
 
-    //         unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'app.jar']
+            unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'app.jar']
 
-    //         echo "Packaging JAR into a deployment bundle..."
-    //         sh "zip -j ${ZIP_FILE_PATH} app.jar"
+            echo "Packaging JAR into a deployment bundle..."
+            sh "zip -j ${ZIP_FILE_PATH} app.jar"
 
-    //         echo "Uploading deployment bundle to S3..."
-    //         sh "aws s3 cp ${ZIP_FILE_PATH} s3://${S3_BUCKET}/${ZIP_FILE_PATH}"
+            echo "Uploading deployment bundle to S3..."
+            sh "aws s3 cp ${ZIP_FILE_PATH} s3://${S3_BUCKET}/${ZIP_FILE_PATH}"
             
-    //         echo "Creating new application version in Elastic Beanstalk..."
-    //         sh "aws elasticbeanstalk create-application-version --application-name ${EB_APP_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket=${S3_BUCKET},S3Key=${ZIP_FILE_PATH}"
+            echo "Creating new application version in Elastic Beanstalk..."
+            sh "aws elasticbeanstalk create-application-version --application-name ${EB_APP_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket=${S3_BUCKET},S3Key=${ZIP_FILE_PATH}"
 
-    //         echo "Updating Elastic Beanstalk environment..."
-    //         sh "aws elasticbeanstalk update-environment --environment-name ${EB_ENV_NAME} --version-label ${VERSION_LABEL}"
+            echo "Updating Elastic Beanstalk environment..."
+            sh "aws elasticbeanstalk update-environment --environment-name ${EB_ENV_NAME} --version-label ${VERSION_LABEL}"
             
-    //         echo "Deployment to Elastic Beanstalk initiated successfully!"
-    //     }
-    //   }
-    // }
+            echo "Deployment to Elastic Beanstalk initiated successfully!"
+        }
+      }
+    }
 
 
 
-    // stage('Deploy to EC2 via SSM') {
-    //   steps {
-    //     script {
-    //         // Use the existing environment variables
-    //         def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
-    //         def imageTag = env.BUILD_NUMBER
-    //         def fullImageUri = "${env.DOCKER_IMAGE}"
-    //         def dockerContainerName = 'my-petclinic-app'
-    //         def containerPort = '8080'
-    //         def hostPort = '8080' // Or '9090' from our previous discussion
+    stage('Deploy to EC2 via SSM') {
+      steps {
+        script {
+            // Use the existing environment variables
+            def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
+            def imageTag = env.BUILD_NUMBER
+            def fullImageUri = "${env.DOCKER_IMAGE}"
+            def dockerContainerName = 'my-petclinic-app'
+            def containerPort = '8080'
+            def hostPort = '8080' // Or '9090' from our previous discussion
 
-    //         def json_input = """
-    //         {
-    //           "InstanceIds": [
-    //             "${ec2InstanceId}"
-    //           ],
-    //           "DocumentName": "AWS-RunShellScript",
-    //           "Parameters": {
-    //             "commands": [
-    //               "aws ecr get-login-password --region ${env.AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${env.ECR_REPOSITORY_URI}",
-    //               "docker stop ${dockerContainerName} || true",
-    //               "docker rm ${dockerContainerName} || true",
-    //               "docker stop \$(docker ps -a -q) || true",
-    //               "docker rm \$(docker ps -a -q) || true",
-    //               "docker rmi \$(docker images -a -q) || true",
-    //               "docker pull ${fullImageUri}",
-    //               "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
-    //             ]
-    //           }
-    //         }
-    //         """
+            def json_input = """
+            {
+              "InstanceIds": [
+                "${ec2InstanceId}"
+              ],
+              "DocumentName": "AWS-RunShellScript",
+              "Parameters": {
+                "commands": [
+                  "aws ecr get-login-password --region ${env.AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${env.ECR_REPOSITORY_URI}",
+                  "docker stop ${dockerContainerName} || true",
+                  "docker rm ${dockerContainerName} || true",
+                  "docker stop \$(docker ps -a -q) || true",
+                  "docker rm \$(docker ps -a -q) || true",
+                  "docker rmi \$(docker images -a -q) || true",
+                  "docker pull ${fullImageUri}",
+                  "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
+                ]
+              }
+            }
+            """
             
-    //         // Write the JSON to a temporary file
-    //         writeFile(file: 'ssm-commands.json', text: json_input)
+            // Write the JSON to a temporary file
+            writeFile(file: 'ssm-commands.json', text: json_input)
 
-    //         // 2. Send the command and capture the CommandId
-    //         def commandOutput = sh(
-    //             script: "aws ssm send-command --cli-input-json file://ssm-commands.json --region us-east-1",
-    //             returnStdout: true
-    //         )
-    //         def commandId = new groovy.json.JsonSlurper().parseText(commandOutput).Command.CommandId
-    //         echo "SSM Command sent with ID: ${commandId}"
+            // 2. Send the command and capture the CommandId
+            def commandOutput = sh(
+                script: "aws ssm send-command --cli-input-json file://ssm-commands.json --region us-east-1",
+                returnStdout: true
+            )
+            def commandId = new groovy.json.JsonSlurper().parseText(commandOutput).Command.CommandId
+            echo "SSM Command sent with ID: ${commandId}"
 
-    //         // 3. Poll for the command status
-    //         def commandStatus = "Pending"
-    //         def maxAttempts = 20
-    //         def attempts = 0
-    //         def invocationOutput
+            // 3. Poll for the command status
+            def commandStatus = "Pending"
+            def maxAttempts = 20
+            def attempts = 0
+            def invocationOutput
 
-    //         while ((commandStatus == "Pending" || commandStatus == "InProgress") && attempts < maxAttempts) {
-    //             echo "Waiting for command ${commandId} to complete. Status: ${commandStatus}..."
-    //             sleep 10
+            while ((commandStatus == "Pending" || commandStatus == "InProgress") && attempts < maxAttempts) {
+                echo "Waiting for command ${commandId} to complete. Status: ${commandStatus}..."
+                sleep 10
                 
-    //             invocationOutput = sh(
-    //                 script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2InstanceId} --region us-east-1",
-    //                 returnStdout: true
-    //             )
-    //             commandStatus = new groovy.json.JsonSlurper().parseText(invocationOutput).Status
-    //             attempts++
-    //         }
+                invocationOutput = sh(
+                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2InstanceId} --region us-east-1",
+                    returnStdout: true
+                )
+                commandStatus = new groovy.json.JsonSlurper().parseText(invocationOutput).Status
+                attempts++
+            }
 
-    //         // 3. Check the final status and output
-    //         if (commandStatus == "Success") {
-    //             echo "SSM command completed successfully!"
-    //         } else {
-    //             echo "SSM command failed. Final status: ${commandStatus}"
-    //             error("SSM deployment failed. Check the SSM console for more details.")
-    //         }
+            // 3. Check the final status and output
+            if (commandStatus == "Success") {
+                echo "SSM command completed successfully!"
+            } else {
+                echo "SSM command failed. Final status: ${commandStatus}"
+                error("SSM deployment failed. Check the SSM console for more details.")
+            }
 
-    //         // Clean up the temporary file
-    //         sh 'rm ssm-commands.json'
-    //     }
-    //   }
-    // }
+            // Clean up the temporary file
+            sh 'rm ssm-commands.json'
+        }
+      }
+    }
 
-    // stage('Output Application Endpoint') {
-    //   steps {
-    //     script {
-    //         def ec2InstanceId = 'i-036b27fe576a906d4' // The ID of your target EC2 instance
-    //         def applicationPort = '8080' // The host port you are using
+    stage('Output Application Endpoint') {
+      steps {
+        script {
+            def ec2InstanceId = 'i-036b27fe576a906d4' // The ID of your target EC2 instance
+            def applicationPort = '8080' // The host port you are using
 
-    //         echo "Retrieving the public IP address of the EC2 instance..."
-    //         sleep 10 
+            echo "Retrieving the public IP address of the EC2 instance..."
+            sleep 10 
             
-    //         // Use the aws ec2 describe-instances command to get the public IP address
-    //         def ipAddress = sh(
-    //             script: "aws ec2 describe-instances --instance-ids ${ec2InstanceId} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text",
-    //             returnStdout: true
-    //         ).trim()
+            // Use the aws ec2 describe-instances command to get the public IP address
+            def ipAddress = sh(
+                script: "aws ec2 describe-instances --instance-ids ${ec2InstanceId} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text",
+                returnStdout: true
+            ).trim()
             
-    //         def endpointUrl = "http://${ipAddress}:${applicationPort}"
+            def endpointUrl = "http://${ipAddress}:${applicationPort}"
             
-    //         echo "****************************************************************"
-    //         echo "Application has been successfully deployed!"
-    //         echo "You can access it at: ${endpointUrl}"
-    //         echo "****************************************************************"
-    //     }
-    //   }
-    // }
+            echo "****************************************************************"
+            echo "Application has been successfully deployed!"
+            echo "You can access it at: ${endpointUrl}"
+            echo "****************************************************************"
+        }
+      }
+    }
 
 
-    // stage('Output Elastic Beanstalk Endpoint') {
-    //   steps {
-    //     script {
-    //         def ebAppName = 'petclinic'
-    //         def ebEnvName = 'petclinic-env-1'
+    stage('Output Elastic Beanstalk Endpoint') {
+      steps {
+        script {
+            def ebAppName = 'petclinic'
+            def ebEnvName = 'petclinic-env-1'
 
-    //         echo "Retrieving the Elastic Beanstalk endpoint..."
+            echo "Retrieving the Elastic Beanstalk endpoint..."
 
-    //         // Get the CNAME of the environment
-    //         def cname = sh(
-    //             script: "aws elasticbeanstalk describe-environments --application-name ${ebAppName} --environment-names ${ebEnvName} --query 'Environments[0].CNAME' --output text",
-    //             returnStdout: true
-    //         ).trim()
+            // Get the CNAME of the environment
+            def cname = sh(
+                script: "aws elasticbeanstalk describe-environments --application-name ${ebAppName} --environment-names ${ebEnvName} --query 'Environments[0].CNAME' --output text",
+                returnStdout: true
+            ).trim()
             
-    //         def endpointUrl = "http://${cname}"
+            def endpointUrl = "http://${cname}"
             
-    //         echo "****************************************************************"
-    //         echo "Deployment to Elastic Beanstalk completed!"
-    //         echo "You can access your application at: ${endpointUrl}"
-    //         echo "****************************************************************"
-    //     }
-    //   }
-    // }
+            echo "****************************************************************"
+            echo "Deployment to Elastic Beanstalk completed!"
+            echo "You can access your application at: ${endpointUrl}"
+            echo "****************************************************************"
+        }
+      }
+    }
   }
   
 
