@@ -143,7 +143,7 @@ pipeline {
               
               try {
                   echo "Deploying artifact to Nexus..."
-                  sh "mvn deploy:deploy-file -Dfile=spring-petclinic-3.4.0-SNAPSHOT.jar -DrepositoryId=petclinic-maven-releases-snapshot -Durl=http://172.31.39.168:8081/repository/petclinic-maven-releases-snapshot/ -s settings.xml"
+                  sh "mvn deploy:deploy-file -Dfile=spring-petclinic-3.4.0-SNAPSHOT.jar -DrepositoryId=petclinic-maven-releases-snapshot -Durl=http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/ -s settings.xml"
               } finally {
                   sh 'rm settings.xml'
               }
