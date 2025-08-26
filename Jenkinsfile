@@ -9,8 +9,9 @@ pipeline {
     ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
 
-    NEXUS_URL = 'http://172.31.39.168:8081'
-    NEXUS_REPO = 'petclinic-maven-releases-group'
+
+    NEXUS_RELEASE_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases/'
+    NEXUS_SNAPSHOT_REPO = 'http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/'
 
     
 
@@ -64,6 +65,36 @@ pipeline {
       }
     }
 
+    stage('Deploy Artifact to Nexus') {
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      steps {
+          script {
+          // Retrieve the version of the project from Maven
+            def version = sh(returnStdout: true, script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout").trim()
+
+          // Determine the Nexus repository URL and repository ID based on version
+            def nexusRepoUrl = version.endsWith('-SNAPSHOT') ? "${NEXUS_SNAPSHOT_REPO}" : "${NEXUS_RELEASE_REPO}"
+            def repositoryId = version.endsWith('-SNAPSHOT') ? 'nexus-snapshots' : 'nexus-releases'
+
+          // Deploy the artifact to Nexus
+            withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+              sh """
+                mvn clean deploy \
+                  -DrepositoryId=${repositoryId} \
+                  -Durl=${nexusRepoUrl} \
+                  -Dusername=${NEXUS_USERNAME} \
+                  -Dpassword=${NEXUS_PASSWORD}
+              """
+          }
+        }
+      }
+    }
+
 
     // stage('Static Code Analysis') {
     //   agent {
@@ -103,54 +134,6 @@ pipeline {
     //     }
     //   }
     // }
-
-
-    stage('Publish to Nexus') {
-      // agent {
-      //   docker {
-      //     image 'maven:3.9.6-eclipse-temurin-17'
-      //     args '-v /var/run/docker.sock:/var/run/docker.sock'
-      //   }
-      // }
-
-      steps {
-        script {
-          // Unarchive the JAR file from the build
-          unarchive mapping: ['target/spring-petclinic-3.4.0-SNAPSHOT.jar': 'spring-petclinic-3.4.0-SNAPSHOT.jar']
-
-          // We use a withCredentials block to get the Nexus credentials
-          withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
-              // ... (The rest of the script to create settings.xml and deploy) ...
-              def mavenSettings = """<?xml version='1.0' encoding='UTF-8'?>
-                  <settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
-                      xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-                      xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd'>
-                      <servers>
-                          <server>
-                              <id>petclinic-maven-releases</id>
-                              <username>\$NEXUS_USER</username>
-                              <password>\$NEXUS_PASSWORD</password>
-                          </server>
-                          <server>
-                              <id>petclinic-maven-releases-snapshot</id>
-                              <username>\$NEXUS_USER</username>
-                              <password>\$NEXUS_PASSWORD</password>
-                          </server>
-                      </servers>
-                  </settings>
-              """
-              writeFile(file: "settings.xml", text: mavenSettings)
-              
-              try {
-                  echo "Deploying artifact to Nexus..."
-                  sh "mvn deploy:deploy-file -Dfile=spring-petclinic-3.4.0-SNAPSHOT.jar -DrepositoryId=petclinic-maven-releases-snapshot -Durl=http://3.80.243.164:8081/repository/petclinic-maven-releases-snapshot/ -s settings.xml"
-              } finally {
-                  sh 'rm settings.xml'
-              }
-          }
-        }
-      }
-    }
 
 
     // // stage('Publish to Nexus') {
