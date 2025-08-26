@@ -83,13 +83,30 @@ pipeline {
 
           // Deploy the artifact to Nexus
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-              sh """
-                mvn clean deploy \
-                  -DrepositoryId=${repositoryId} \
-                  -Durl=${nexusRepoUrl} \
-                  -Dusername=${NEXUS_USERNAME} \
-                  -Dpassword=${NEXUS_PASSWORD}
-              """
+                def settingsXml = """
+                    <settings>
+                      <servers>
+                        <server>
+                          <id>nexus-releases</id>
+                          <username>${NEXUS_USERNAME}</username>
+                          <password>${NEXUS_PASSWORD}</password>
+                        </server>
+                        <server>
+                          <id>nexus-snapshots</id>
+                          <username>${NEXUS_USERNAME}</username>
+                          <password>${NEXUS_PASSWORD}</password>
+                        </server>
+                      </servers>
+                    </settings>
+                """
+                
+                // Write the settings.xml content to a file
+                writeFile(file: 'settings.xml', text: settingsXml)
+
+                // Deploy the artifact using the generated settings.xml
+                sh """
+                    mvn clean deploy -s settings.xml
+                """
           }
         }
       }
