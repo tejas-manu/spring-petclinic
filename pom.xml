@@ -457,11 +457,11 @@
       <distributionManagement>
         <repository>
             <id>nexus-releases</id>
-            <url>http://3.89.149.12:8081/repository/petclinic-maven-releases/</url>
+            <url>http://35.168.12.69:8081/repository/petclinic-maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>nexus-snapshots</id>
-            <url>http://3.89.149.12:8081/repository/petclinic-maven-releases-snapshot/</url>
+            <url>http://35.168.12.69:8081/repository/petclinic-maven-releases-snapshot/</url>
         </snapshotRepository>
     </distributionManagement>
 
