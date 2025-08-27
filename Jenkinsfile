@@ -386,8 +386,6 @@ pipeline {
 
 
 
-
-
     stage('Output Application Endpoint') {
       steps {
         script {
@@ -412,6 +410,7 @@ pipeline {
         }
       }
     }
+  }
 
 
 
