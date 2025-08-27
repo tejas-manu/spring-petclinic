@@ -298,7 +298,7 @@ pipeline {
             def nexusPublicIp = '35.168.12.69'
             def nexusDockerPort = '8082'
             def nexusRepositoryName = 'petclinic-docker'
-            def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker"
+            def nexusRegistry = "http://35.168.12.69:8082/repository/petclinic-docker"
 
 
             def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
