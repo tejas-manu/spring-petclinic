@@ -303,10 +303,15 @@ pipeline {
 
             def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
             def imageTag = env.BUILD_NUMBER
-            def fullImageUri = "${env.DOCKER_IMAGE}"
+            // def fullImageUri = "${env.DOCKER_IMAGE}"
             def dockerContainerName = 'my-petclinic-app'
             def containerPort = '8080'
             def hostPort = '8080' 
+
+
+            def NEXUS_REPOSITORY_URI_2 = '35.168.12.69:8082/petclinic-docker/petclinic'
+            // DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
+            def fullImageUri       = "${NEXUS_REPOSITORY_URI_2}:${imageTag}"
           
             def nexusUser
             def nexusPass
