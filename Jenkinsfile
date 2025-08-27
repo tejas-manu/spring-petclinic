@@ -98,7 +98,7 @@ pipeline {
     steps {
         script {
             // Define the Nexus registry URL and credentials
-            def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker/"
+            def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker"
             def imageToPush = "${nexusRegistry}/my-docker-repo:my-app-image:${env.BUILD_NUMBER}"
 
             // Log in to the Nexus Docker registry using the credentials stored in Jenkins
