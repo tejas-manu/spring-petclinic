@@ -223,19 +223,12 @@ pipeline {
       }
     }
 
-    stage('Creating ZAP Directory to store report') {
+    stage('Run ZAP Scan') {
       steps {
         script {
           echo "Creating directory..."
           sh 'docker exec owasp mkdir /zap/wrk'
-        }
-      }
-    }
 
-
-    stage('ZAP Baseline Scan') {
-      steps {
-        script {
           echo "Running ZAP Baseline Scan..."
           def zapUrl = "http://${hostIp}:9090"
 
@@ -247,32 +240,69 @@ pipeline {
               -r zap_report.html \
               -I
             """
-        }
-      }
-    }
-
-
-    stage('Copy ZAP Report') {
-      steps {
-        script {
+        
           echo "Archiving ZAP Report..."
           sh '''
               docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
              '''
-        }
-      }
-    }
 
-
-    stage('Archive ZAP Report') {
-      steps {
-        script {
           echo "Archiving ZAP Report..."
 
           archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
         }
       }
     }
+
+    // stage('Creating ZAP Directory to store report') {
+    //   steps {
+    //     script {
+    //       echo "Creating directory..."
+    //       sh 'docker exec owasp mkdir /zap/wrk'
+    //     }
+    //   }
+    // }
+
+
+    // stage('ZAP Baseline Scan') {
+    //   steps {
+    //     script {
+    //       echo "Running ZAP Baseline Scan..."
+    //       def zapUrl = "http://${hostIp}:9090"
+
+    //       echo "Running ZAP Baseline Scan...${zapUrl}"
+    //       sh """
+    //           docker exec owasp \
+    //           zap-baseline.py \
+    //           -t ${zapUrl} \
+    //           -r zap_report.html \
+    //           -I
+    //         """
+    //     }
+    //   }
+    // }
+
+
+    // stage('Copy ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+    //       sh '''
+    //           docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
+    //          '''
+    //     }
+    //   }
+    // }
+
+
+    // stage('Archive ZAP Report') {
+    //   steps {
+    //     script {
+    //       echo "Archiving ZAP Report..."
+
+    //       archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+    //     }
+    //   }
+    // }
 
 
     stage('Deploy to Elastic Beanstalk') {
