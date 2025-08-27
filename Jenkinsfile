@@ -6,15 +6,19 @@ pipeline {
   }
 
   environment {
-    // ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
-    NEXUS_REPOSITORY_URI = '172.31.39.168:8082/petclinic-docker/petclinic'
-    // DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
+
+    NEXUS_PUBLIC_IP = '35.168.12.69'
+
+    NEXUX_REPOSITORY_PORT = '8082'
+    NEXUS_REGISTRY = "http://${NEXUS_PUBLIC_IP}:8082/repository/petclinic-docker"
+
+    NEXUS_REPOSITORY_URI = "${NEXUS_PUBLIC_IP}:8082/petclinic-docker/petclinic"
     DOCKER_IMAGE       = "${NEXUS_REPOSITORY_URI}:${BUILD_NUMBER}"
 
+    NEXUS_RELEASE_REPO = "http://${NEXUS_PUBLIC_IP}:8081/repository/petclinic-maven-releases/"
+    NEXUS_SNAPSHOT_REPO = "http://${NEXUS_PUBLIC_IP}:8081/repository/petclinic-maven-releases-snapshot/"
 
-
-    NEXUS_RELEASE_REPO = 'http://35.168.12.69:8081/repository/petclinic-maven-releases/'
-    NEXUS_SNAPSHOT_REPO = 'http://35.168.12.69:8081/repository/petclinic-maven-releases-snapshot/'
+    PETCLINIC_EC2_INSTANCE_ID = 'i-036b27fe576a906d4'
 
     AWS_DEFAULT_REGION = 'us-east-1'
     EB_APP_NAME = 'petclinic'
@@ -100,16 +104,13 @@ pipeline {
     stage('Push to Nexus Registry') {
     steps {
         script {
-            // Define the Nexus registry URL and credentials
-            def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker"
+            def nexusRegistry = "http://${env.NEXUS_PUBLIC_IP}:8082/repository/petclinic-docker"
 
-            // Log in to the Nexus Docker registry using the credentials stored in Jenkins
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${nexusRegistry}"
             }
 
             sh "docker push ${DOCKER_IMAGE}"
-            
         }
       }
     }
@@ -295,24 +296,19 @@ pipeline {
       steps {
         script {
             // Use the existing environment variables
-            def nexusPublicIp = '35.168.12.69'
-            def nexusDockerPort = '8082'
-            def nexusRepositoryName = 'petclinic-docker'
-            def nexusRegistry = "http://35.168.12.69:8082/repository/petclinic-docker"
+            def nexusPublicIp = env.NEXUS_PUBLIC_IP
+            def nexusDockerPort = env.NEXUX_REPOSITORY_PORT
+            def nexusRegistry = env.NEXUS_REGISTRY
 
-
-            def ec2InstanceId = 'i-036b27fe576a906d4' // Still need to get this from somewhere
+            
+            def ec2InstanceId = env.PETCLINIC_EC2_INSTANCE_ID
             def imageTag = env.BUILD_NUMBER
-            // def fullImageUri = "${env.DOCKER_IMAGE}"
+            def fullImageUri       = env.DOCKER_IMAGE
+
             def dockerContainerName = 'my-petclinic-app'
             def containerPort = '8080'
             def hostPort = '8080' 
 
-
-            def NEXUS_REPOSITORY_URI_2 = '35.168.12.69:8082/petclinic-docker/petclinic'
-            // DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
-            def fullImageUri       = "${NEXUS_REPOSITORY_URI_2}:${imageTag}"
-          
             def nexusUser
             def nexusPass
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
@@ -510,6 +506,12 @@ pipeline {
 
 
 //************************************************ ECR as Repository - Commented Out **************************************************//
+  // environment {
+  //   ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
+  //   DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
+  // }
+
+
     // stage('Push Docker Image') {
     //   steps {
     //     script {
