@@ -119,7 +119,7 @@ pipeline {
       }
     }
 
-        stage('Push to Nexus Registry') {
+        stage('Pull from Nexus Registry') {
     steps {
         script {
             // Define the Nexus registry URL and credentials
