@@ -6,7 +6,8 @@ pipeline {
   }
 
   environment {
-    ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
+    // ECR_REPOSITORY_URI = '318488421833.dkr.ecr.us-east-1.amazonaws.com/spring-boot/petclinic'
+    ECR_REPOSITORY_URI = 'http://172.31.39.168:8082/repository/petclinic-docker'
     DOCKER_IMAGE       = "${ECR_REPOSITORY_URI}:${BUILD_NUMBER}"
 
 
@@ -99,7 +100,6 @@ pipeline {
         script {
             // Define the Nexus registry URL and credentials
             def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker"
-            def imageToPush = "${nexusRegistry}/my-docker-repo:my-app-image:${env.BUILD_NUMBER}"
 
             // Log in to the Nexus Docker registry using the credentials stored in Jenkins
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
@@ -107,10 +107,11 @@ pipeline {
             }
 
             // Tag the image with the Nexus registry URL
-            sh "docker tag my-app-image:latest ${imageToPush}"
+            // sh "docker tag my-app-image:latest ${imageToPush}"
 
             // Push the tagged image to the Nexus registry
-            sh "docker push ${imageToPush}"
+            sh "docker push ${DOCKER_IMAGE}"
+            
         }
       }
     }
