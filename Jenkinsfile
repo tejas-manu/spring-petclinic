@@ -91,14 +91,14 @@ pipeline {
 
 
 
-    stage('Build Docker Image') {
-      steps {
-        script {
-          sh "docker build -t ${DOCKER_IMAGE} ."
-          echo "Docker image built: ${DOCKER_IMAGE}"
-        }
-      }
-    }
+    // stage('Build Docker Image') {
+    //   steps {
+    //     script {
+    //       sh "docker build -t ${DOCKER_IMAGE} ."
+    //       echo "Docker image built: ${DOCKER_IMAGE}"
+    //     }
+    //   }
+    // }
     
 
     stage('Trivia Scan') {
@@ -244,21 +244,35 @@ pipeline {
       }
     }
 
+    stage('Build Docker Image') {
+      steps {
+        script {
+
+          echo "Cleaning up temporary deployment files..."
+          sh "rm -f ${ZIP_FILE_PATH}"
+
+          echo 'Stopping all running containers...'
+          sh 'docker stop $(docker ps -a -q) || true'
+
+          echo 'Removing all stopped containers...'
+          sh 'docker rm $(docker ps -a -q) || true'
+
+          echo 'Pausing for 5 seconds...'
+          sh 'sleep 5'
+
+          echo 'Removing all images...'
+          sh 'docker rmi $(docker images -a -q) || true'
+
+          sh "docker build -t ${DOCKER_IMAGE} ."
+          echo "Docker image built: ${DOCKER_IMAGE}"
+        }
+      }
+    }
+
 
     stage('Push to Nexus Registry') {
     steps {
       script {
-
-            echo 'Cleaning up...'
-
-            echo "Cleaning up temporary deployment files..."
-            sh "rm -f ${ZIP_FILE_PATH}"
-
-            echo 'Stopping all running containers...'
-            sh 'docker stop $(docker ps -a -q) || true'
-
-            echo 'Removing all stopped containers...'
-            sh 'docker rm $(docker ps -a -q) || true'
 
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
