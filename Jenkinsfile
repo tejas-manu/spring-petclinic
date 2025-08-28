@@ -91,14 +91,14 @@ pipeline {
 
 
 
-    // stage('Build Docker Image') {
-    //   steps {
-    //     script {
-    //       sh "docker build -t ${DOCKER_IMAGE} ."
-    //       echo "Docker image built: ${DOCKER_IMAGE}"
-    //     }
-    //   }
-    // }
+    stage('Build Docker Image') {
+      steps {
+        script {
+          sh "docker build -t ${DOCKER_IMAGE} ."
+          echo "Docker image built: ${DOCKER_IMAGE}"
+        }
+      }
+    }
     
 
     stage('Trivia Scan') {
@@ -244,7 +244,7 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build Docker Image for push') {
       steps {
         script {
 
