@@ -248,7 +248,6 @@ pipeline {
     stage('Push to Nexus Registry') {
     steps {
         script {
-            sh '''echo '{"insecure-registries": ["'${env.NEXUS_PUBLIC_IP}:${env.NEXUS_REPOSITORY_PORT}'"]}' | sudo tee /etc/docker/daemon.json > /dev/null'''
 
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
