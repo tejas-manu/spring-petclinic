@@ -260,12 +260,6 @@ pipeline {
             echo 'Removing all stopped containers...'
             sh 'docker rm $(docker ps -a -q) || true'
 
-            echo 'Pausing for 5 seconds...'
-            sh 'sleep 5'
-
-            echo 'Removing all images...'
-            sh 'docker rmi $(docker images -a -q) || true'
-
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
             }
