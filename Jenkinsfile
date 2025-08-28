@@ -55,39 +55,39 @@ pipeline {
     }
 
 
-    stage('Build and Test') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
+    // stage('Build and Test') {
+    //   agent {
+    //     docker {
+    //       image 'maven:3.9.6-eclipse-temurin-17'
+    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
       
-      steps {
-        sh 'mvn clean package'
+    //   steps {
+    //     sh 'mvn clean package'
 
-        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-      }
-    }
+    //     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+    //   }
+    // }
 
 
-    stage('Static Code Analysis') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
+    // stage('Static Code Analysis') {
+    //   agent {
+    //     docker {
+    //       image 'maven:3.9.6-eclipse-temurin-17'
+    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
       
-      steps {
-        echo 'Running SonarQube analysis...'
-        withSonarQubeEnv('MySonarServer') {
-          sh "mvn sonar:sonar \
-              -Dsonar.projectKey=spring-petclinic-tejas \
-              -Dsonar.host.url=http://172.31.39.168:9000/"
-          }
-      }
-    }
+    //   steps {
+    //     echo 'Running SonarQube analysis...'
+    //     withSonarQubeEnv('MySonarServer') {
+    //       sh "mvn sonar:sonar \
+    //           -Dsonar.projectKey=spring-petclinic-tejas \
+    //           -Dsonar.host.url=http://172.31.39.168:9000/"
+    //       }
+    //   }
+    // }
 
 
 
@@ -155,101 +155,116 @@ pipeline {
 
 
 
-    stage('Run Application for Scan') {
-      steps {
-        script {
-          echo "Starting application container for ZAP scan..."
-          def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
+    // stage('Run Application for Scan') {
+    //   steps {
+    //     script {
+    //       echo "Starting application container for ZAP scan..."
+    //       def containerId = sh(returnStdout: true, script: "docker run -d -p 9090:8080 ${DOCKER_IMAGE}").trim()
           
-          env.APP_CONTAINER_ID = containerId
+    //       env.APP_CONTAINER_ID = containerId
           
-          echo "Application container ID: ${APP_CONTAINER_ID}"
-        }
-      }
-    }
+    //       echo "Application container ID: ${APP_CONTAINER_ID}"
+    //     }
+    //   }
+    // }
 
-    stage('Pulling ZAP Image') {
-      steps {
-        script {
-          echo "Pulling ZAP Image from DockerHub..."
+    // stage('Pulling ZAP Image') {
+    //   steps {
+    //     script {
+    //       echo "Pulling ZAP Image from DockerHub..."
 
-          sh 'docker pull zaproxy/zap-stable'
-          sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
-        }
-      }
-    }
+    //       sh 'docker pull zaproxy/zap-stable'
+    //       sh 'docker run -dt --name owasp zaproxy/zap-stable /bin/bash'
+    //     }
+    //   }
+    // }
 
-    stage('Check Application Health') {
-      steps {
-        script {
-          env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
-          def checkUrl = "http://${hostIp}:9090/actuator/health"
-          def maxAttempts = 60
-          def attempt = 0
-          def httpCode
+    // stage('Check Application Health') {
+    //   steps {
+    //     script {
+    //       env.hostIp = sh(script: 'hostname -I | cut -d" " -f1', returnStdout: true).trim()
+    //       def checkUrl = "http://${hostIp}:9090/actuator/health"
+    //       def maxAttempts = 60
+    //       def attempt = 0
+    //       def httpCode
 
-          while (attempt < maxAttempts) {
-            echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
+    //       while (attempt < maxAttempts) {
+    //         echo "Attempt ${attempt + 1} of ${maxAttempts}: Checking service availability at ${checkUrl}..."
             
-            httpCode = sh(
-              script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
-              returnStdout: true
-            ).trim()
+    //         httpCode = sh(
+    //           script: "curl -s -o /dev/null -L -w '%{http_code}' ${checkUrl} || true",
+    //           returnStdout: true
+    //         ).trim()
             
-            if (httpCode == "200") {
-              echo "Service is up and running! Proceeding with ZAP scan."
-              break
-            } else {
-              echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
-              sh "sleep 5"
-              attempt++
-            }
-          }
+    //         if (httpCode == "200") {
+    //           echo "Service is up and running! Proceeding with ZAP scan."
+    //           break
+    //         } else {
+    //           echo "Service not yet ready. Status code: ${httpCode}. Waiting 5 seconds..."
+    //           sh "sleep 5"
+    //           attempt++
+    //         }
+    //       }
 
-          if (httpCode != "200") {
-            echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
-            error("Application health check failed.")
-          }
-        }
-      }
-    }
+    //       if (httpCode != "200") {
+    //         echo "Error: Service failed to become ready after ${maxAttempts * 5} seconds."
+    //         error("Application health check failed.")
+    //       }
+    //     }
+    //   }
+    // }
 
 
-    stage('Run ZAP Scan') {
-      steps {
-        script {
-          echo "Creating directory..."
-          sh 'docker exec owasp mkdir /zap/wrk'
+    // stage('Run ZAP Scan') {
+    //   steps {
+    //     script {
+    //       echo "Creating directory..."
+    //       sh 'docker exec owasp mkdir /zap/wrk'
 
-          echo "Running ZAP Baseline Scan..."
-          def zapUrl = "http://${hostIp}:9090"
+    //       echo "Running ZAP Baseline Scan..."
+    //       def zapUrl = "http://${hostIp}:9090"
 
-          echo "Running ZAP Baseline Scan...${zapUrl}"
-          sh """
-              docker exec owasp \
-              zap-baseline.py \
-              -t ${zapUrl} \
-              -r zap_report.html \
-              -I
-            """
+    //       echo "Running ZAP Baseline Scan...${zapUrl}"
+    //       sh """
+    //           docker exec owasp \
+    //           zap-baseline.py \
+    //           -t ${zapUrl} \
+    //           -r zap_report.html \
+    //           -I
+    //         """
         
-          echo "Archiving ZAP Report..."
-          sh '''
-              docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
-             '''
+    //       echo "Archiving ZAP Report..."
+    //       sh '''
+    //           docker cp owasp:/zap/wrk/zap_report.html ${WORKSPACE}/zap_report.html
+    //          '''
 
-          echo "Archiving ZAP Report..."
+    //       echo "Archiving ZAP Report..."
 
-          archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
-        }
-      }
-    }
+    //       archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+    //     }
+    //   }
+    // }
 
 
 
     stage('Push to Nexus Registry') {
     steps {
       script {
+            def nexusPublicIp = '13.217.142.250'
+            def nexusDockerPort = '8082'
+            
+            // 1. Configure the Docker daemon with the insecure registry
+            writeFile(file: "daemon.json", text: '''{
+                    "insecure-registries": [
+                      "''' + "${nexusPublicIp}:${nexusDockerPort}" + '''"
+                    ]
+                  }''')
+
+            sh '''
+                sudo cp ${WORKSPACE}/daemon.json /etc/docker/daemon.json
+                sudo systemctl daemon-reload
+                sudo systemctl restart docker
+            '''
 
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
