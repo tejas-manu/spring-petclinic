@@ -104,7 +104,7 @@ pipeline {
     stage('Push to Nexus Registry') {
     steps {
         script {
-
+          
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
             }
@@ -268,21 +268,13 @@ pipeline {
     stage('Deploy to EC2 via SSM') {
       steps {
         script {
-            // Use the existing environment variables
-            def nexusPublicIp = env.NEXUS_PUBLIC_IP
-            def nexusDockerPort = env.NEXUX_REPOSITORY_PORT
-            def nexusRegistry = env.NEXUS_REGISTRY
-
-            def ec2InstanceId = env.PETCLINIC_EC2_INSTANCE_ID
-            def imageTag = env.BUILD_NUMBER
-            def fullImageUri       = env.DOCKER_IMAGE
-
             def dockerContainerName = 'my-petclinic-app'
             def containerPort = '8080'
             def hostPort = '8080' 
 
             def nexusUser
             def nexusPass
+
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 nexusUser = NEXUS_USER
                 nexusPass = NEXUS_PASS
@@ -291,7 +283,7 @@ pipeline {
             def json_input = """
             {
               "InstanceIds": [
-                "${ec2InstanceId}"
+                "${env.PETCLINIC_EC2_INSTANCE_ID}"
               ],
               "DocumentName": "AWS-RunShellScript",
               "Parameters": {
@@ -307,8 +299,8 @@ pipeline {
                   "docker stop \$(docker ps -a -q) || true",
                   "docker rm \$(docker ps -a -q) || true",
                   "docker rmi \$(docker images -a -q) || true",
-                  "docker pull ${fullImageUri}",
-                  "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${fullImageUri}"
+                  "docker pull ${env.DOCKER_IMAGE}",
+                  "docker run -d -p ${hostPort}:${containerPort} --name ${dockerContainerName} ${env.DOCKER_IMAGE}"
                 ]
               }
             }
@@ -336,7 +328,7 @@ pipeline {
                 sleep 10
                 
                 invocationOutput = sh(
-                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${ec2InstanceId} --region us-east-1",
+                    script: "aws ssm get-command-invocation --command-id ${commandId} --instance-id ${env.PETCLINIC_EC2_INSTANCE_ID} --region us-east-1",
                     returnStdout: true
                 )
                 commandStatus = new groovy.json.JsonSlurper().parseText(invocationOutput).Status
@@ -362,7 +354,6 @@ pipeline {
     stage('Output Application Endpoint') {
       steps {
         script {
-            def ec2InstanceId = 'i-036b27fe576a906d4' // The ID of your target EC2 instance
             def applicationPort = '8080' // The host port you are using
 
             echo "Retrieving the public IP address of the EC2 instance..."
@@ -370,7 +361,7 @@ pipeline {
             
             // Use the aws ec2 describe-instances command to get the public IP address
             def ipAddress = sh(
-                script: "aws ec2 describe-instances --instance-ids ${ec2InstanceId} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text",
+                script: "aws ec2 describe-instances --instance-ids ${env.PETCLINIC_EC2_INSTANCE_ID} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text",
                 returnStdout: true
             ).trim()
             
