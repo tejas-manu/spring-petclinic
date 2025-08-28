@@ -250,22 +250,6 @@ pipeline {
     stage('Push to Nexus Registry') {
     steps {
       script {
-            def nexusPublicIp = '13.217.142.250'
-            def nexusDockerPort = '8082'
-            
-            // 1. Configure the Docker daemon with the insecure registry
-            writeFile(file: "daemon.json", text: '''{
-                    "insecure-registries": [
-                      "''' + "${nexusPublicIp}:${nexusDockerPort}" + '''"
-                    ]
-                  }''')
-
-            sh '''
-                sudo cp ${WORKSPACE}/daemon.json /etc/docker/daemon.json
-                sudo systemctl daemon-reload
-                sudo systemctl restart docker
-            '''
-
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                 sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
             }
