@@ -104,10 +104,9 @@ pipeline {
     stage('Push to Nexus Registry') {
     steps {
         script {
-            def nexusRegistry = "http://${env.NEXUS_PUBLIC_IP}:8082/repository/petclinic-docker"
 
             withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${nexusRegistry}"
+                sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${env.NEXUS_REGISTRY}"
             }
 
             sh "docker push ${DOCKER_IMAGE}"
@@ -266,32 +265,6 @@ pipeline {
     // }
 
 
-
-  // stage('Pull from Nexus Registry') {
-  //   steps {
-  //       script {
-  //           // Define the Nexus registry URL and credentials
-  //           def nexusRegistry = "http://172.31.39.168:8082/repository/petclinic-docker"
-  //           def imageToPush = "${nexusRegistry}/my-docker-repo:my-app-image:${env.BUILD_NUMBER}"
-  //           sh 'docker rmi $(docker images -a -q) || true'
-
-  //           // Log in to the Nexus Docker registry using the credentials stored in Jenkins
-  //           withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-  //               sh "docker login -u ${NEXUS_USER} -p ${NEXUS_PASS} ${nexusRegistry}"
-  //           }
-
-  //           // Tag the image with the Nexus registry URL
-  //           // sh "docker tag my-app-image:latest ${imageToPush}"
-
-  //           // Push the tagged image to the Nexus registry
-  //           sh "docker pull ${DOCKER_IMAGE}"
-  //           sh "docker images"
-            
-  //       }
-  //     }
-  //   }
-
-
     stage('Deploy to EC2 via SSM') {
       steps {
         script {
@@ -300,7 +273,6 @@ pipeline {
             def nexusDockerPort = env.NEXUX_REPOSITORY_PORT
             def nexusRegistry = env.NEXUS_REGISTRY
 
-            
             def ec2InstanceId = env.PETCLINIC_EC2_INSTANCE_ID
             def imageTag = env.BUILD_NUMBER
             def fullImageUri       = env.DOCKER_IMAGE
@@ -324,11 +296,11 @@ pipeline {
               "DocumentName": "AWS-RunShellScript",
               "Parameters": {
                 "commands": [
-                  "echo '{\\"insecure-registries\\": [\\"${nexusPublicIp}:${nexusDockerPort}\\"]}' | sudo tee /etc/docker/daemon.json > /dev/null",
+                  "echo '{\\"insecure-registries\\": [\\"${env.NEXUS_PUBLIC_IP}:${env.NEXUX_REPOSITORY_PORT}\\"]}' | sudo tee /etc/docker/daemon.json > /dev/null",
                   "sudo systemctl daemon-reload",
                   "sudo systemctl restart docker",
 
-                  "docker login -u ${nexusUser} -p ${nexusPass} ${nexusRegistry}",
+                  "docker login -u ${nexusUser} -p ${nexusPass} ${env.NEXUS_REGISTRY}",
 
                   "docker stop ${dockerContainerName} || true",
                   "docker rm ${dockerContainerName} || true",
