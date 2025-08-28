@@ -111,50 +111,6 @@ pipeline {
     }
 
 
-    // stage('Deploy Artifact to Nexus') {
-    //   agent {
-    //     docker {
-    //       image 'maven:3.9.6-eclipse-temurin-17'
-    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
-    //     }
-    //   }
-    //   steps {
-    //       script {
-    //         def version = sh(returnStdout: true, script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout").trim()
-
-    //         def nexusRepoUrl = version.endsWith('-SNAPSHOT') ? "${NEXUS_SNAPSHOT_REPO}" : "${NEXUS_RELEASE_REPO}"
-    //         def repositoryId = version.endsWith('-SNAPSHOT') ? 'nexus-snapshots' : 'nexus-releases'
-
-    //         withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-    //             def settingsXml = """
-    //                 <settings>
-    //                   <servers>
-    //                     <server>
-    //                       <id>nexus-releases</id>
-    //                       <username>${NEXUS_USERNAME}</username>
-    //                       <password>${NEXUS_PASSWORD}</password>
-    //                     </server>
-    //                     <server>
-    //                       <id>nexus-snapshots</id>
-    //                       <username>${NEXUS_USERNAME}</username>
-    //                       <password>${NEXUS_PASSWORD}</password>
-    //                     </server>
-    //                   </servers>
-    //                 </settings>
-    //             """
-                
-    //             writeFile(file: 'settings.xml', text: settingsXml)
-
-    //             sh """
-    //                 mvn clean deploy -s settings.xml
-    //             """
-    //       }
-    //     }
-    //   }
-    // }
-
-
-
     stage('Run Application for Scan') {
       steps {
         script {
@@ -683,3 +639,47 @@ pipeline {
   // }
 
 //***************************************************************************************************************//
+
+
+//*********************************************** Nexus as Repository - Commented Out **************************************************//
+    // stage('Deploy Artifact to Nexus') {
+    //   agent {
+    //     docker {
+    //       image 'maven:3.9.6-eclipse-temurin-17'
+    //       args '-v /var/run/docker.sock:/var/run/docker.sock'
+    //     }
+    //   }
+    //   steps {
+    //       script {
+    //         def version = sh(returnStdout: true, script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout").trim()
+
+    //         def nexusRepoUrl = version.endsWith('-SNAPSHOT') ? "${NEXUS_SNAPSHOT_REPO}" : "${NEXUS_RELEASE_REPO}"
+    //         def repositoryId = version.endsWith('-SNAPSHOT') ? 'nexus-snapshots' : 'nexus-releases'
+
+    //         withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+    //             def settingsXml = """
+    //                 <settings>
+    //                   <servers>
+    //                     <server>
+    //                       <id>nexus-releases</id>
+    //                       <username>${NEXUS_USERNAME}</username>
+    //                       <password>${NEXUS_PASSWORD}</password>
+    //                     </server>
+    //                     <server>
+    //                       <id>nexus-snapshots</id>
+    //                       <username>${NEXUS_USERNAME}</username>
+    //                       <password>${NEXUS_PASSWORD}</password>
+    //                     </server>
+    //                   </servers>
+    //                 </settings>
+    //             """
+                
+    //             writeFile(file: 'settings.xml', text: settingsXml)
+
+    //             sh """
+    //                 mvn clean deploy -s settings.xml
+    //             """
+    //       }
+    //     }
+    //   }
+    // }
